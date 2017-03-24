@@ -11,8 +11,10 @@ const int chipSelect = 10; //Defining the pin for the SD Card reader
 
 //Defining pins for Sharp sensor
 int measurePin = A0;
-int ledPower = 8;
+int ledPower = 8; da d
 
+
+yh
 unsigned int samplingTime = 280; //Datasheet: Duration before measuring the ouput signal (after switching on LED): 280 µs
 unsigned int deltaTime = 40; //Datasheet: Duration of the whole excitation pulse: 320 µs; Duration before switching off LED: 40 µs
 unsigned int sleepTime = 9680; //Datasheet: Pulse Cycle: 10ms; Remaining time: 10,000 - 320 = 9680 µs
