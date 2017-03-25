@@ -11,10 +11,10 @@
 class StateManager {
 private:
   uint8_t state;
-  static StateManager _singleton;
+  static StateManager * _singleton;
   StateManager();
 public:
-  static StateManager instance();
+  static StateManager * instance();
   // Reads incoming data packets from bluetooth
   void processPackets();
   // Processes the current state

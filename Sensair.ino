@@ -7,7 +7,6 @@
 #include "classes/StateManager.h"
 
 RTC_DS1307 rtc; //Defining the RTC
-const int chipSelect = 10; //Defining the pin for the SD Card reader
 
 //Defining pins for Sharp sensor
 int measurePin = A0;
@@ -30,16 +29,7 @@ void setup(){
   pinMode(ledPower,OUTPUT); //Configures the digital pin as an output (to set it at 0V and 5V per cycle; turning on and off the LED
   //pinMode(10, OUTPUT); //Configures the pin of the SD card reader as an output
 
-  //SD Card check
-  if (!SD.begin(chipSelect)) {
-  Serial.println("SD Card Inaccessible");
-  return;
-}
-  Serial.println("SD Card Accessed");
-
-Serial.println("Test Start"); //To indicate the start of a test interval
-
-
+  Serial.println("Test Start"); //To indicate the start of a test interval
 }
 
 void loop(){
