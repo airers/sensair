@@ -23,6 +23,16 @@
 #define CMD_GET_MICROCLIMATE      13
 #define CMD_MICROCLIMATE_PACKET   14
 
+union {
+    char bytes[4];
+    long data;
+} long_u;
+
+union {
+    char bytes[2];
+    uint8_t data;
+} uint16_u;
+
 class CommandProcessor {
 private:
 

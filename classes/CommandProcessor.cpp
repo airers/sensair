@@ -40,13 +40,21 @@ CommandProcessor::processPacket(byte [] data) {
 }
 
 long CommandProcessor::decodeLong(byte [] data, int start) {
-
+  long_u ret;
+  ret.bytes[0] = data[start];
+  ret.bytes[1] = data[start + 1];
+  ret.bytes[2] = data[start + 2];
+  ret.bytes[3] = data[start + 3];
+  return ret.data;
 }
 
 uint8_t CommandProcessor::decodeInt8(byte [] data, int start) {
-
+  return data[start];
 }
 
 uint16_t CommandProcessor::decodeInt16(byte [] data, int start) {
-
+  uint16_u ret;
+  ret.bytes[0] = data[start];
+  ret.bytes[1] = data[start + 1];
+  return ret.data;
 }
