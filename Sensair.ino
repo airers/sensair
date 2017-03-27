@@ -5,6 +5,8 @@
 #include <SoftwareSerial.h>
 
 #include "classes/CommandProcessor.h"
+
+#include "classes/CommandProcessor.cpp"
 #include "classes/StateManager.h"
 
 
@@ -25,8 +27,9 @@ float dustDensity = 0;
 
 #define BLUETOOTH_RX 7
 #define BLUETOOTH_TX 9
-//SoftwareSerial btSerial(BLUETOOTH_RX, BLUETOOTH_TX);
+
 SoftwareSerial btSerial(BLUETOOTH_RX, BLUETOOTH_TX);
+
 
 void setup(){
 
@@ -49,7 +52,6 @@ void setup(){
 
 //Serial.println("Test Start"); //To indicate the start of a test interval
 
-
 }
 
 void loop(){
@@ -68,13 +70,31 @@ void loop(){
   calcVoltage = voMeasured*(5.0/1024); //0-5V mapped to 0 - 1023 integer values for real voltage value
   dustDensity = 0.17*calcVoltage-0.1; //Datasheet: Calibration curve
 
+//
+//  Serial.print("Dust Density: ");
+//  Serial.print(dustDensity); // unit: mg/m3
+//  Serial.println(";");
 
-  Serial.print("Dust Density: ");
-  Serial.print(dustDensity); // unit: mg/m3
-  Serial.println(";");
-
-  while (btSerial.available()) {
-    Serial.write(btSerial.read());
+  // Process the incoming bluetooth packets
+  byte type = 0;
+  uint8_t len = 0;
+  if ( btSerial.available() ) {
+    type = btSerial.read();
+    if ( btSerial.available() ) {
+      len = btSerial.read();
+    }
+    byte data [len];
+    int i = 0;
+    while ( i < len && btSerial.available() ) {
+      data[i] = btSerial.read();
+      i++;
+    }
+    
+    CommandProcessor::processPacket(type, len, data, btSerial);
+  
+    while ( btSerial.available() ) { // Flush the buffer
+      Serial.println(btSerial.read());
+    }
   }
 
   //Printing readings to Serial Monitor
@@ -106,9 +126,9 @@ void loop(){
   // btSerial.print(calcVoltage);
   // btSerial.print(";");
   //
-  btSerial.print("Dust Density: ");
-  btSerial.print(dustDensity); // unit: mg/m3
-  btSerial.println(";");
+//  btSerial.print("Dust Density: ");
+//  btSerial.print(dustDensity); // unit: mg/m3
+//  btSerial.println(";");
 
 
   delay(1000); //Time interval before each printed reading

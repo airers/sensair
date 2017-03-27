@@ -23,21 +23,22 @@
 #define CMD_GET_MICROCLIMATE      13
 #define CMD_MICROCLIMATE_PACKET   14
 
-union {
+typedef union {
     char bytes[4];
     long data;
 } long_u;
 
-union {
+typedef union {
     char bytes[2];
     uint8_t data;
 } uint16_u;
+
 
 class CommandProcessor {
 private:
 
 public:
-  static void processPacket(byte data []);
+  static void processPacket(byte type, uint8_t len, byte bytes[], SoftwareSerial &btSerial);
 
   static long decodeLong(byte data [], int start);
   static uint8_t decodeInt8(byte data [], int start);
@@ -45,6 +46,8 @@ public:
 
   static void decodePacket();
   static void encodePacket();
+
+  static void init();
 };
 
 #endif // _COMMAND_PROCESSOR_H_
