@@ -6,6 +6,8 @@
 #define _COMMAND_PROCESSOR_H_
 
 #include <Arduino.h>
+#include "StateManager.h"
+
 
 #define CMD_FALSE                 0
 #define CMD_TRUE                  1
@@ -23,11 +25,22 @@
 #define CMD_GET_MICROCLIMATE      13
 #define CMD_MICROCLIMATE_PACKET   14
 
+typedef union {
+    char bytes[4];
+    long data;
+} long_u;
+
+typedef union {
+    char bytes[2];
+    uint8_t data;
+} uint16_u;
+
+
 class CommandProcessor {
 private:
 
 public:
-  static void processPacket(byte data []);
+  static void processPacket(byte type, uint8_t len, byte bytes[], SoftwareSerial &btSerial, StateManager &stateManager);
 
   static long decodeLong(byte data [], int start);
   static uint8_t decodeInt8(byte data [], int start);
@@ -35,6 +48,8 @@ public:
 
   static void decodePacket();
   static void encodePacket();
+
+  static void init();
 };
 
 #endif // _COMMAND_PROCESSOR_H_
