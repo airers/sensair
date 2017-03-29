@@ -16,12 +16,12 @@ class FileProcessor {
 private:
   bool cardAvailable;
   int state;
-  // Storing 60 readings is not feasible,
-  // will take up 1500 bytes.
+
+  // Store the reading totals
   double readingTotal;
   double latTotal;
   double lonTotal;
-  //TODO: Accuracy calculations
+  // Accuracy calculations
   float lonMin, lonMax, latMin, latMax;
   double elevationTotal;
   uint8_t readingCount;
@@ -128,10 +128,12 @@ public:
       currentDayFile.print(",");
       currentDayFile.print(elevationAvg);
       currentDayFile.print(",");
-      currentDayFile.println(accuracy);
+      currentDayFile.print(accuracy);
+      currentDayFile.write("\n");
       currentDayFile.close();
     }
   }
 };
+
 
 #endif // _FILE_PROCESSOR_H_
