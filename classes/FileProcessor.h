@@ -102,7 +102,7 @@ public:
     double latAvg = latTotal / readingCount;
     double lonAvg = lonTotal / readingCount;
     double elevationAvg = elevationAvg / readingCount;
-    float accuracy = ()(latMax-latMin) * (latMax-latMin)) + ((lonMax-lonMin) * (lonMax-lonMin));
+    float accuracy = ((latMax-latMin) * (latMax-latMin)) + ((lonMax-lonMin) * (lonMax-lonMin));
     readingTotal = latTotal = lonTotal = elevationTotal = 0.0;
     lonMin = lonMax = latMin = latMax = 0.0;
     readingCount = 0;
