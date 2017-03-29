@@ -70,7 +70,6 @@ public:
   }
 
   void pushData (float reading, double lat, double lon, float elevation)  {
-    // if ( !cardAvailable ) return;
     readingTotal += reading;
     latTotal += lat;
     lonTotal += lon;
@@ -90,7 +89,7 @@ public:
   void openAppropiateFile(long timestamp)  {
     if ( !cardAvailable ) return;
     char * filename = FileProcessor::timestampToFilename(timestamp);
-    currentDayFile = SD.open("temp.txt", FILE_WRITE);
+    currentDayFile = SD.open(filename, FILE_WRITE);
     if ( currentDayFile ) {
       Serial.print("Storing data in ");
       Serial.println(filename);
@@ -130,6 +129,7 @@ public:
       currentDayFile.print(elevationAvg);
       currentDayFile.print(",");
       currentDayFile.println(accuracy);
+      currentDayFile.close();
     }
   }
 };

@@ -75,6 +75,7 @@ void loop() {
     dustDensity = 0.17*calcVoltage-0.1; //Datasheet: Calibration curve
 
     fileProcessor.pushData(dustDensity, 1.35, 103.8, 0);
+
   }
   if ( currentTime >= nextMinuteTime ) {
     long prevMinuteTime = nextMinuteTime - 60;
