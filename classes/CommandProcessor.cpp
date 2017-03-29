@@ -1,22 +1,41 @@
 #include "CommandProcessor.h"
 
-CommandProcessor::processPacket(byte [] data) {
-  int byteCount = sizeOf(data);
-  if ( byteCount < 2 ) {
-    return;
-  }
-  uint8_t command = data[0];
-  uint8_t length = data[1];
-  if ( byteCount < length ) {
-    return;
-  }
+void CommandProcessor::processPacket(byte type,
+  uint8_t len, byte bytes[],
+  SoftwareSerial &btSerial,
+  StateManager &stateManager) {
 
-  switch ( command ) {
+  uint8_t packet_len = 0;
+  switch ( type ) {
     case CMD_CONNECTION_CHECK:
-
+    {
+      Serial.println("Received connection check");
+      btSerial.write(CMD_CONNECTION_ACK);
+      packet_len = 4;
+      btSerial.write(packet_len);
+      long_u timestamp;
+      timestamp.data = stateManager.getTimeStamp();
+      btSerial.write(timestamp.bytes[0]);
+      btSerial.write(timestamp.bytes[1]);
+      btSerial.write(timestamp.bytes[2]);
+      btSerial.write(timestamp.bytes[3]);
+      btSerial.print("\r\n");
+    }
     break;
     case CMD_SET_TIME:
-      // Set time
+    {
+      Serial.println("Setting time");
+      Serial.println(len);
+      if ( len >= 4 ) {
+        long_u timestamp;
+        timestamp.bytes[0] = bytes[0];
+        timestamp.bytes[1] = bytes[1];
+        timestamp.bytes[2] = bytes[2];
+        timestamp.bytes[3] = bytes[3];
+        Serial.println(timestamp.data);
+        stateManager.setTime(timestamp.data);
+      }
+    }
     case CMD_GET_TIME:
       // Send time packet
     break;
@@ -35,18 +54,27 @@ CommandProcessor::processPacket(byte [] data) {
       // Set state back to idle
     default:
       // Error!
+      Serial.println(" :Wrong command");
     break;
   }
 }
 
-long CommandProcessor::decodeLong(byte [] data, int start) {
-
+long CommandProcessor::decodeLong(byte data [], int start) {
+  long_u ret;
+  ret.bytes[0] = data[start];
+  ret.bytes[1] = data[start + 1];
+  ret.bytes[2] = data[start + 2];
+  ret.bytes[3] = data[start + 3];
+  return ret.data;
 }
 
-uint8_t CommandProcessor::decodeInt8(byte [] data, int start) {
-
+uint8_t CommandProcessor::decodeInt8(byte data [], int start) {
+  return data[start];
 }
 
-uint16_t CommandProcessor::decodeInt16(byte [] data, int start) {
-
+uint16_t CommandProcessor::decodeInt16(byte data [], int start) {
+  uint16_u ret;
+  ret.bytes[0] = data[start];
+  ret.bytes[1] = data[start + 1];
+  return ret.data;
 }
