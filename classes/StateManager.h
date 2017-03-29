@@ -10,7 +10,7 @@
 #define STATE_SENDING 1
 
 #define MICROCLIMATE_INDOORS 0
-#define MICROCLIMATE_OUTDOORS 0
+#define MICROCLIMATE_OUTDOORS 1
 
 class StateManager {
 private:

@@ -1,60 +1,95 @@
 //Including libraries to connect RTC by Wire and I2C
 #include <Wire.h>
 #include "RTClib.h"
-#include <SD.h>
 #include <SoftwareSerial.h>
 
 #include "classes/CommandProcessor.h"
-
 #include "classes/CommandProcessor.cpp"
 #include "classes/StateManager.h"
+#include "classes/FileProcessor.h"
 
-const int chipSelect = 10; //Defining the pin for the SD Card reader
+
 
 //Defining pins for Sharp sensor
-int measurePin = A0;
-int ledPower = 8;
+#define MEASURE_PIN A0
+#define LED_POWER_PIN 8
 
-unsigned int samplingTime = 280; //Datasheet: Duration before measuring the ouput signal (after switching on LED): 280 µs
+unsigned int SAMPLING_TIME = 280; //Datasheet: Duration before measuring the ouput signal (after switching on LED): 280 µs
 unsigned int deltaTime = 40; //Datasheet: Duration of the whole excitation pulse: 320 µs; Duration before switching off LED: 40 µs
 unsigned int sleepTime = 9680; //Datasheet: Pulse Cycle: 10ms; Remaining time: 10,000 - 320 = 9680 µs
-
-float voMeasured = 0;
-float calcVoltage = 0;
-float dustDensity = 0;
 
 #define BLUETOOTH_RX 7
 #define BLUETOOTH_TX 9
 
 SoftwareSerial btSerial(BLUETOOTH_RX, BLUETOOTH_TX);
 StateManager stateManager;
+FileProcessor fileProcessor;
 
-void setup(){
+// Required for the file operations
+long currentTime;
+long nextMinuteTime;
+
+long calculateNextMinute() {
+  DateTime currentDateTime(currentTime);
+  return currentDateTime.unixtime() + (60 - currentDateTime.second());
+}
+
+void setup() {
 
   Serial.begin(9600); //Setting the speed of communication in bits per second; Arduino default: 9600
-
-  stateManager.init();
   btSerial.begin(9600);
   Wire.begin();
 
-  pinMode(ledPower,OUTPUT); //Configures the digital pin as an output (to set it at 0V and 5V per cycle; turning on and off the LED
-  pinMode(10, OUTPUT); //Configures the pin of the SD card reader as an output
+  stateManager.init();
+  fileProcessor.init();
 
-  Serial.println("Test Start"); //To indicate the start of a test interval
+  currentTime = stateManager.getTimeStamp();
+  nextMinuteTime = calculateNextMinute();
+
+  pinMode(LED_POWER_PIN ,OUTPUT); //Configures the digital pin as an output (to set it at 0V and 5V per cycle; turning on and off the LED
+  pinMode(10, OUTPUT); //Configures the pin of the SD card reader as an output
 }
 
-void loop(){
-  digitalWrite(ledPower,LOW); //Turning on the LED; sinking current (i.e. light the LED connected through a series reistor to 5V)
-  delayMicroseconds(samplingTime); //Duration of sampling
 
-  voMeasured = analogRead(measurePin); //Reading the voltage measured
+void loop() {
 
-  delayMicroseconds(deltaTime); //Completing excitation pulse
-  digitalWrite(ledPower,HIGH); //Turning off the LED
-  delayMicroseconds(sleepTime); //Delay before next reading
+  long loopTime = stateManager.getTimeStamp();
+  if ( loopTime > currentTime ) {
+    currentTime = loopTime;
+    // Get reading
+    Serial.print("Getting Reading at: ");
+    Serial.println(currentTime);
 
-  calcVoltage = voMeasured*(5.0/1024); //0-5V mapped to 0 - 1023 integer values for real voltage value
-  dustDensity = 0.17*calcVoltage-0.1; //Datasheet: Calibration curve
+    float voMeasured = 0;
+    float calcVoltage = 0;
+    float dustDensity = 0;
+
+    digitalWrite(LED_POWER_PIN ,LOW); //Turning on the LED; sinking current (i.e. light the LED connected through a series reistor to 5V)
+    delayMicroseconds(SAMPLING_TIME); //Duration of sampling
+
+    voMeasured = analogRead(MEASURE_PIN); //Reading the voltage measured
+
+    delayMicroseconds(deltaTime); //Completing excitation pulse
+    digitalWrite(LED_POWER_PIN ,HIGH); //Turning off the LED
+    delayMicroseconds(sleepTime); //Delay before next reading
+
+    calcVoltage = voMeasured*(5.0/1024); //0-5V mapped to 0 - 1023 integer values for real voltage value
+    dustDensity = 0.17*calcVoltage-0.1; //Datasheet: Calibration curve
+
+    fileProcessor.pushData(dustDensity, 1.35, 103.8, 0);
+
+  }
+  if ( currentTime >= nextMinuteTime ) {
+    Serial.print("Averaging Readings for: ");
+    Serial.println(nextMinuteTime - 60);
+
+    // Average past minute readings & save as previous minute
+    fileProcessor.storeAverageData(nextMinuteTime - 60, stateManager.microclimate);
+
+    nextMinuteTime = calculateNextMinute();
+  }
+
+
 
 //
 //  Serial.print("Dust Density: ");
@@ -139,47 +174,47 @@ void loop(){
 //  btSerial.println(";");
 
 
-  delay(1000); //Time interval before each printed reading
+  delay(200); //Time interval before each printed reading
 
   //Printing readings to an SD card file
-  File dataFile = SD.open("LOG.TXT", FILE_WRITE); //Writes a LOG file if one is not available
-  if (dataFile) {
-    DateTime now = stateManager.getDateTime();
-    dataFile.print("Date: ");
-    dataFile.print(now.year(), DEC);
-    dataFile.print("/");
-    dataFile.print(now.month(), DEC);
-    dataFile.print("/");
-    dataFile.print(now.day(), DEC);
-    dataFile.print(";");
+  // File dataFile = SD.open("LOG.TXT", FILE_WRITE); //Writes a LOG file if one is not available
+  // if (dataFile) {
+//    DateTime now = stateManager.getDateTime();
+//    dataFile.print("Date: ");
+//    dataFile.print(now.year(), DEC);
+//    dataFile.print("/");
+//    dataFile.print(now.month(), DEC);
+//    dataFile.print("/");
+//    dataFile.print(now.day(), DEC);
+//    dataFile.print(";");
+//
+//    dataFile.print(" Time: ");
+//    dataFile.print(now.hour(), DEC);
+//    dataFile.print(":");
+//    dataFile.print(now.minute(), DEC);
+//    dataFile.print(":");
+//    dataFile.print(now.second(), DEC);
+//    dataFile.print(";");
+//
+//    dataFile.print(" Timestamp: ");
+//    dataFile.print(now.unixtime());
+//    dataFile.print(";");
+//
+//    dataFile.print(" RawSignalValue(0-1023): ");
+//    dataFile.print(voMeasured);
+//    dataFile.print(";");
+//
+//    dataFile.print(" Voltage: ");
+//    dataFile.print(calcVoltage);
+//    dataFile.print(";");
+//
+//    dataFile.print(" DustDensity: ");
+//    dataFile.print(dustDensity); // unit: mg/m3
+//    dataFile.println(";");
+//    dataFile.close();
 
-    dataFile.print(" Time: ");
-    dataFile.print(now.hour(), DEC);
-    dataFile.print(":");
-    dataFile.print(now.minute(), DEC);
-    dataFile.print(":");
-    dataFile.print(now.second(), DEC);
-    dataFile.print(";");
-
-    dataFile.print(" Timestamp: ");
-    dataFile.print(now.unixtime());
-    dataFile.print(";");
-
-    dataFile.print(" RawSignalValue(0-1023): ");
-    dataFile.print(voMeasured);
-    dataFile.print(";");
-
-    dataFile.print(" Voltage: ");
-    dataFile.print(calcVoltage);
-    dataFile.print(";");
-
-    dataFile.print(" DustDensity: ");
-    dataFile.print(dustDensity); // unit: mg/m3
-    dataFile.println(";");
-    dataFile.close();
-
-  } else {
+  // } else {
     // Serial.println("SD Card Error");
-  }
+  // }
 
 }
