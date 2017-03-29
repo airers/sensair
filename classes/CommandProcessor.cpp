@@ -1,13 +1,26 @@
 #include "CommandProcessor.h"
 
-void CommandProcessor::processPacket(byte type, uint8_t len, byte bytes[], SoftwareSerial &btSerial) {
+void CommandProcessor::processPacket(byte type,
+  uint8_t len, byte bytes[],
+  SoftwareSerial &btSerial,
+  StateManager &stateManager) {
+
   uint8_t packet_len = 0;
   switch ( type ) {
     case CMD_CONNECTION_CHECK:
+    {
       Serial.println("Received connection check");
       btSerial.write(CMD_CONNECTION_ACK);
+      packet_len = 4;
       btSerial.write(packet_len);
+      long_u timestamp;
+      timestamp.data = stateManager.getTimeStamp();
+      btSerial.write(timestamp.bytes[0]);
+      btSerial.write(timestamp.bytes[1]);
+      btSerial.write(timestamp.bytes[2]);
+      btSerial.write(timestamp.bytes[3]);
       btSerial.print("\r\n");
+    }
     break;
     case CMD_SET_TIME:
       // Set time

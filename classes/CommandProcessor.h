@@ -6,6 +6,8 @@
 #define _COMMAND_PROCESSOR_H_
 
 #include <Arduino.h>
+#include "StateManager.h"
+
 
 #define CMD_FALSE                 0
 #define CMD_TRUE                  1
@@ -38,7 +40,7 @@ class CommandProcessor {
 private:
 
 public:
-  static void processPacket(byte type, uint8_t len, byte bytes[], SoftwareSerial &btSerial);
+  static void processPacket(byte type, uint8_t len, byte bytes[], SoftwareSerial &btSerial, StateManager &stateManager);
 
   static long decodeLong(byte data [], int start);
   static uint8_t decodeInt8(byte data [], int start);

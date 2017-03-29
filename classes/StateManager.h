@@ -14,27 +14,40 @@
 
 class StateManager {
 private:
+public:
   uint8_t state;
   uint8_t microclimate;
   RTC_DS1307 rtc;
 
-  static StateManager _singleton;
-  StateManager();
-public:
-  static StateManager instance();
+  void init() {
+    state = STATE_IDLE;
+    microclimate = MICROCLIMATE_INDOORS;
+    rtc.begin();
+  }
+  // static StateManager * inst();
   // Reads incoming data packets from bluetooth
   void processPackets();
   // Processes the current state
   void stateProcessing();
 
   // Microclimate Getter/Setter
-  uint8_t getMicroclimate();
-  void setMicroclimate(uint8_t _microclimate);
+  uint8_t getMicroclimate() {
+    return microclimate;
+  }
+  void setMicroclimate(uint8_t _microclimate) {
+    microclimate = _microclimate;
+  }
 
   // Time Getter/Setter
-  DateTime getDateTime();
-  long getTimeStamp();
-  void setTime(long time);
+  DateTime getDateTime() {
+    return rtc.now();
+  }
+  long getTimeStamp() {
+    return rtc.now().unixtime();
+  }
+  void setTime(long time) {
+    rtc.adjust(DateTime(time));
+  }
 };
 
 #endif // _STATE_MANAGER_H_
