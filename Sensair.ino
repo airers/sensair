@@ -72,7 +72,7 @@ void loop(){
   // Process the incoming bluetooth packets
   byte type = 0;
   uint8_t len = 0;
-  if ( btSerial.available() ) {
+  while ( btSerial.available() ) {
     type = btSerial.read();
     if ( btSerial.available() ) {
       len = btSerial.read();
@@ -86,9 +86,9 @@ void loop(){
 
     CommandProcessor::processPacket(type, len, data, btSerial, stateManager);
 
-    while ( btSerial.available() ) { // Flush the buffer
-      Serial.println(btSerial.read());
-    }
+//    while ( btSerial.available() ) { // Flush the buffer
+//      Serial.println(btSerial.read());
+//    }
   }
 
   /**
@@ -101,10 +101,10 @@ void loop(){
    * 1490793754
    * 88 219 181 26
    */
-   long_u timeLong;
-   timeLong.data = stateManager.getTimeStamp();
-  //
-   Serial.println(timeLong.data);
+//   long_u timeLong;
+//   timeLong.data = stateManager.getTimeStamp();
+//  //
+//   Serial.println(timeLong.data);
   // Serial.print((uint8_t)timeLong.bytes[0]);
   // Serial.print(" ");
   // Serial.print((uint8_t)timeLong.bytes[1]);

@@ -23,7 +23,19 @@ void CommandProcessor::processPacket(byte type,
     }
     break;
     case CMD_SET_TIME:
-      // Set time
+    {
+      Serial.println("Setting time");
+      Serial.println(len);
+      if ( len >= 4 ) {
+        long_u timestamp;
+        timestamp.bytes[0] = bytes[0];
+        timestamp.bytes[1] = bytes[1];
+        timestamp.bytes[2] = bytes[2];
+        timestamp.bytes[3] = bytes[3];
+        Serial.println(timestamp.data);
+        stateManager.setTime(timestamp.data);
+      }
+    }
     case CMD_GET_TIME:
       // Send time packet
     break;
