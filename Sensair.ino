@@ -35,7 +35,6 @@ long calculateNextMinute() {
 }
 
 void setup() {
-
   Serial.begin(9600); //Setting the speed of communication in bits per second; Arduino default: 9600
   btSerial.begin(9600);
   Wire.begin();
@@ -52,13 +51,12 @@ void setup() {
 
 
 void loop() {
-
   long loopTime = stateManager.getTimeStamp();
   if ( loopTime > currentTime ) {
     currentTime = loopTime;
     // Get reading
-    Serial.print("Getting Reading at: ");
-    Serial.println(currentTime);
+    // Serial.print("Getting Reading at: ");
+    // Serial.println(currentTime);
 
     float voMeasured = 0;
     float calcVoltage = 0;
@@ -77,19 +75,17 @@ void loop() {
     dustDensity = 0.17*calcVoltage-0.1; //Datasheet: Calibration curve
 
     fileProcessor.pushData(dustDensity, 1.35, 103.8, 0);
-
   }
   if ( currentTime >= nextMinuteTime ) {
+    long prevMinuteTime = nextMinuteTime - 60;
     Serial.print("Averaging Readings for: ");
-    Serial.println(nextMinuteTime - 60);
+    Serial.println(prevMinuteTime);
 
     // Average past minute readings & save as previous minute
-    fileProcessor.storeAverageData(nextMinuteTime - 60, stateManager.microclimate);
-
+    fileProcessor.openAppropiateFile(prevMinuteTime);
+    fileProcessor.storeAverageData(prevMinuteTime, stateManager.microclimate);
     nextMinuteTime = calculateNextMinute();
   }
-
-
 
 //
 //  Serial.print("Dust Density: ");
@@ -175,18 +171,6 @@ void loop() {
 
 
   delay(200); //Time interval before each printed reading
-
-  //Printing readings to an SD card file
-  // File dataFile = SD.open("LOG.TXT", FILE_WRITE); //Writes a LOG file if one is not available
-  // if (dataFile) {
-//    DateTime now = stateManager.getDateTime();
-//    dataFile.print("Date: ");
-//    dataFile.print(now.year(), DEC);
-//    dataFile.print("/");
-//    dataFile.print(now.month(), DEC);
-//    dataFile.print("/");
-//    dataFile.print(now.day(), DEC);
-//    dataFile.print(";");
 //
 //    dataFile.print(" Time: ");
 //    dataFile.print(now.hour(), DEC);
