@@ -34,23 +34,57 @@ long calculateNextMinute() {
   return currentDateTime.unixtime() + (60 - currentDateTime.second());
 }
 
-void processLine(char * buffer) {
+/**
+ * Simulates doing a input.split(',')[section]
+ * @param  output          output memory space (must be allocated)
+ * @param  input           input memory (char*) assumes it's a string
+ * @param  section         which section you want after "splitting"
+ */
+void getSplitSection(char* output, char * input, int section ) {
+  int start = 0;
+  int end = 0;
   int i = 0;
-  // Move to first comma
-  while(buffer[i] != ',') i++;
-  i++;
-  // Extract timestamp from second comma to third comma
-  int startUnix = i;
-  while(buffer[i] != ',') i++;
-  int endUnix = i;
-  i++;
-  char unix[endUnix - startUnix + 1];
-  for ( int j = startUnix, itr = 0; j < endUnix; j++, itr++ ) {
-    unix[itr] = buffer[j];
+  for (int s = 0; s < section + 1; s++ ) {
+    i++; // Move one index up. Assumes the first char is not a comma
+    start = !end?0:end+1; // Set the start as the previous end + 1
+    while(input[i] && input[i] != ',') i++; // Move iterator to next pointer
+    end = i; // Set the end index
+    if (!input[i]) break; // Break on null terminator
   }
-  unix[endUnix - startUnix] = NULL;
-  long unixTimestamp = atol(unix);
-  // delay(10000);
+  if ( start == end ) return;
+  memcpy(output, input + start, end - start); // Do actual copying
+  output[end - start] = '\0'; // Null terminate the string
+}
+
+void processLine(char * buffer) {
+  // Line example:
+  // 12:41:42,1490058484,1023.01,2,1.2952337,103.7858645,14.525,5.4246
+  char * temp = (char*)malloc(15);
+  getSplitSection(temp, buffer, 1);
+  long timestamp = atol(temp);
+  // Serial.println(timestamp);
+  if ( 1 ) {
+    byte packet[35];
+    memcpy(&packet, &timestamp, 4);
+
+    getSplitSection(temp, buffer, 2);
+    float read = atof(temp);
+
+    getSplitSection(temp, buffer, 3);
+    uint8_t mic = atoi(temp);
+
+    getSplitSection(temp, buffer, 4);
+    double lat = atof(temp);
+    getSplitSection(temp, buffer, 5);
+    double lon = atof(temp);
+    getSplitSection(temp, buffer, 6);
+    float ele = atof(temp);
+
+    getSplitSection(temp, buffer, 7);
+    float acc = atof(temp);
+  }
+
+  free(temp);
 }
 
 void setup() {
@@ -70,6 +104,7 @@ void setup() {
 
   /**
    * Tests show that it takes about 1.9ms to read a single line from a file
+   * 2.4ms to do conversion of data
    * This means that when reading from a file of 1440 elements,
    * it wil take 2.7s to scan the entire file.
    * This will result in reading loses of 2 seconds.
@@ -82,13 +117,13 @@ void setup() {
     Serial.print(filename);
     Serial.println(" exists");
 
-    long start = millis();
+    long startTime = millis();
     File currentFile = SD.open(filename, FILE_READ);
-    char buffer[100];
+    char * buffer = (char*)malloc(90);
     if ( currentFile ) {
       int lines = 0;
       while ( currentFile.available() ) {
-        char r = NULL;
+        char r = '\0';
         int i = 0;
         while ( r != '\n' ) {
           if ( !currentFile.available() ) break;
@@ -96,17 +131,17 @@ void setup() {
           buffer[i] = r;
           i++;
         }
-        buffer[i] = NULL;
-        // Serial.println(buffer);
+        buffer[i] = '\0';
         // Process a line
         processLine(buffer);
-        lines ++ ;
+        lines++ ;
       }
       Serial.print("Lines: ");
       Serial.println(lines);
-
+      free(buffer);
     }
-    long duration = millis() - start;
+    long duration = millis() - startTime;
+    Serial.print("Duration: ");
     Serial.println(duration);
 
   } else {
@@ -149,9 +184,9 @@ void loop() {
     Serial.println(prevMinuteTime);
 
     // Average past minute readings & save as previous minute
-    fileProcessor.openAppropiateFile(prevMinuteTime);
-    fileProcessor.storeAverageData(prevMinuteTime, stateManager.microclimate);
-    nextMinuteTime = calculateNextMinute();
+    // fileProcessor.openAppropiateFile(prevMinuteTime);
+    // fileProcessor.storeAverageData(prevMinuteTime, stateManager.microclimate);
+    // nextMinuteTime = calculateNextMinute();
   }
 
 
