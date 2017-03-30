@@ -122,13 +122,13 @@ public:
       currentDayFile.print(",");
       currentDayFile.print(microclimate);
       currentDayFile.print(",");
-      currentDayFile.print(latAvg);
+      currentDayFile.print(latAvg,8);
       currentDayFile.print(",");
-      currentDayFile.print(lonAvg);
+      currentDayFile.print(lonAvg,8);
       currentDayFile.print(",");
-      currentDayFile.print(elevationAvg);
+      currentDayFile.print(elevationAvg,2);
       currentDayFile.print(",");
-      currentDayFile.print(accuracy);
+      currentDayFile.print(accuracy,2);
       currentDayFile.write("\n");
       currentDayFile.close();
     }

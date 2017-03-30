@@ -29,6 +29,8 @@ FileProcessor fileProcessor;
 long currentTime;
 long nextMinuteTime;
 
+long readingIterator = 1490816240;
+
 long calculateNextMinute() {
   DateTime currentDateTime(currentTime);
   return currentDateTime.unixtime() + (60 - currentDateTime.second());
@@ -56,62 +58,63 @@ void getSplitSection(char* output, char * input, int section ) {
   output[end - start] = '\0'; // Null terminate the string
 }
 
-void processLine(char * buffer) {
+bool processLine(char * buffer) {
   // Line example:
   // 12:41:42,1490058484,1023.01,2,1.2952337,103.7858645,14.525,5.4246
   char * temp = (char*)malloc(15);
   getSplitSection(temp, buffer, 1);
   long timestamp = atol(temp);
-  // Serial.println(timestamp);
-  if ( 1 ) {
-    byte packet[35];
-    memcpy(&packet, &timestamp, 4);
+
+  if ( timestamp >= readingIterator) {
+    readingIterator = timestamp + 1;
+    byte * packet = (byte*)malloc(25);
+    memcpy(packet, &timestamp, 4);
 
     getSplitSection(temp, buffer, 2);
     float read = atof(temp);
+    memcpy(packet + 4, &read, 4);
 
     getSplitSection(temp, buffer, 3);
     uint8_t mic = atoi(temp);
+    packet[24] = mic;
 
     getSplitSection(temp, buffer, 4);
     double lat = atof(temp);
+    memcpy(packet + 8, &lat, 4);
+
     getSplitSection(temp, buffer, 5);
     double lon = atof(temp);
+    memcpy(packet + 12, &lon, 4);
+
     getSplitSection(temp, buffer, 6);
     float ele = atof(temp);
+    memcpy(packet + 16, &ele, 4);
 
     getSplitSection(temp, buffer, 7);
     float acc = atof(temp);
-  }
+    memcpy(packet + 20, &acc, 4);
 
-  free(temp);
+    for ( int a = 0 ; a < 25; a++ ) {
+      Serial.print(packet[a]);
+      Serial.print(" ");
+    }
+    Serial.println();
+    free(packet);
+    free(temp);
+    return true;
+  } else {
+    free(temp);
+    return false;
+  }
 }
 
-void setup() {
-  Serial.begin(9600); //Setting the speed of communication in bits per second; Arduino default: 9600
-  btSerial.begin(9600);
-  Wire.begin();
 
-  stateManager.init();
-  fileProcessor.init();
-
-  currentTime = stateManager.getTimeStamp();
-  nextMinuteTime = calculateNextMinute();
-
-  pinMode(LED_POWER_PIN ,OUTPUT); //Configures the digital pin as an output (to set it at 0V and 5V per cycle; turning on and off the LED
-  pinMode(10, OUTPUT); //Configures the pin of the SD card reader as an output
-
-
-  /**
-   * Tests show that it takes about 1.9ms to read a single line from a file
-   * 2.4ms to do conversion of data
-   * This means that when reading from a file of 1440 elements,
-   * it wil take 2.7s to scan the entire file.
-   * This will result in reading loses of 2 seconds.
-   * This is not a problem, just something to take note.
-   */
-  long readingIterator = 1490816240;
-
+void sendSomePackets() {
+  if ( readingIterator == 0 ) {
+    return;
+  }
+  Serial.print("Sending packets from: ");
+  Serial.println(readingIterator);
   char * filename = FileProcessor::timestampToFilename(readingIterator);
   if ( SD.exists(filename) ) {
     Serial.print(filename);
@@ -133,9 +136,18 @@ void setup() {
         }
         buffer[i] = '\0';
         // Process a line
-        processLine(buffer);
-        lines++ ;
+        if ( processLine(buffer) ) {
+          lines++;
+        };
+        if ( lines >= 5 ) {
+          break;
+        }
       }
+      if ( lines == 0 ) {
+        Serial.println("No more packets");
+        readingIterator = 0;
+      }
+      currentFile.close();
       Serial.print("Lines: ");
       Serial.println(lines);
       free(buffer);
@@ -150,8 +162,35 @@ void setup() {
   }
 }
 
+void setup() {
+  Serial.begin(9600); //Setting the speed of communication in bits per second; Arduino default: 9600
+  btSerial.begin(9600);
+  Wire.begin();
+
+  stateManager.init();
+  fileProcessor.init();
+
+  currentTime = stateManager.getTimeStamp();
+  nextMinuteTime = calculateNextMinute();
+
+  pinMode(LED_POWER_PIN ,OUTPUT); //Configures the digital pin as an output (to set it at 0V and 5V per cycle; turning on and off the LED
+  pinMode(10, OUTPUT); //Configures the pin of the SD card reader as an output
+
+  /**
+   * Tests show that it takes about 1.9ms to read a single line from a file
+   * 2.4ms to do conversion of data
+   * 109.5ms to write a single line to the BT buffer
+   * This means that when reading from a file of 1440 elements,
+   * it wil take 2.7s to scan the entire file.
+   * This will result in reading loses of 2 seconds.
+   * This is not a problem, just something to take note.
+   */
+
+}
+
 
 void loop() {
+  sendSomePackets();
   long loopTime = stateManager.getTimeStamp();
   if ( loopTime > currentTime ) {
     currentTime = loopTime;
@@ -172,11 +211,10 @@ void loop() {
     calcVoltage = voMeasured*(5.0/1024); //0-5V mapped to 0 - 1023 integer values for real voltage value
     dustDensity = 0.17*calcVoltage-0.1; //Datasheet: Calibration curve
 
-    fileProcessor.pushData(dustDensity, 1.35, 103.8, 0);
+    fileProcessor.pushData(dustDensity, 1.35432101, 103.8765432, 0);
     // Average past minute readings & save as previous minute
     // fileProcessor.openAppropiateFile(currentTime);
     // fileProcessor.storeAverageData(currentTime, stateManager.microclimate);
-    // nextMinuteTime = calculateNextMinute();
   }
   if ( currentTime >= nextMinuteTime ) {
     long prevMinuteTime = nextMinuteTime - 60;
@@ -184,9 +222,9 @@ void loop() {
     Serial.println(prevMinuteTime);
 
     // Average past minute readings & save as previous minute
-    // fileProcessor.openAppropiateFile(prevMinuteTime);
-    // fileProcessor.storeAverageData(prevMinuteTime, stateManager.microclimate);
-    // nextMinuteTime = calculateNextMinute();
+    fileProcessor.openAppropiateFile(prevMinuteTime);
+    fileProcessor.storeAverageData(prevMinuteTime, stateManager.microclimate);
+    nextMinuteTime = calculateNextMinute();
   }
 
 
