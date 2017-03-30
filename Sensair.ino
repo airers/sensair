@@ -63,10 +63,10 @@ void setup() {
    * This will result in reading loses of 2 seconds.
    * This is not a problem, just something to take note.
    */
-   int packets = fileProcessor.countPackets(1490830040);
-   Serial.println(packets);
-
-   fileProcessor.startSendingData(1490830040);
+  //  int packets = fileProcessor.countPackets(1490830040);
+  //  Serial.println(packets);
+   //
+  //  fileProcessor.startSendingData(1490830040);
 }
 
 
@@ -142,5 +142,5 @@ void loop() {
    */
 
 
-  delay(200); //Time interval before each printed reading
+  delay(100); //Time interval before each printed reading
 }
