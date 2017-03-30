@@ -7,6 +7,7 @@
 
 #include <Arduino.h>
 #include "StateManager.h"
+#include "FileProcessor.h"
 
 
 #define CMD_FALSE                 0
@@ -32,15 +33,15 @@ typedef union {
 
 typedef union {
     char bytes[2];
-    uint8_t data;
+    uint16_t data;
 } uint16_u;
 
 
 class CommandProcessor {
 private:
-
 public:
-  static void processPacket(byte type, uint8_t len, byte bytes[], SoftwareSerial &btSerial, StateManager &stateManager);
+  static long timestampForSending;
+  static void processPacket(byte type, uint8_t len, byte bytes[], SoftwareSerial &btSerial, StateManager &stateManager, FileProcessor &fileProcessor);
 
   static long decodeLong(byte data [], int start);
   static uint8_t decodeInt8(byte data [], int start);

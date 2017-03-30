@@ -8,6 +8,8 @@
 #include <SD.h>
 #include "RTClib.h"
 
+// #define CMD_READING_COUNT         8
+
 
 //Defining the pin for the SD Card reader
 #define SD_PIN 10
@@ -172,7 +174,7 @@ public:
     output[end - start] = '\0'; // Null terminate the string
   }
 
-  bool processLine(char * buffer) {
+  bool processLine(char * buffer, SoftwareSerial &btSerial) {
     // Line example:
     // 12:41:42,1490058484,1023.01,2,1.2952337,103.7858645,14.525,5.4246
     char * temp = (char*)malloc(15);
@@ -208,11 +210,14 @@ public:
       float acc = atof(temp);
       memcpy(packet + 20, &acc, 4);
 
+      uint8_t command = 8;
+      btSerial.write(command);
+      uint8_t packet_len = 25;
+      btSerial.write(packet_len);
       for ( int a = 0 ; a < 25; a++ ) {
-        Serial.print(packet[a]);
-        Serial.print(" ");
+        btSerial.write(packet[a]);
       }
-      Serial.println();
+      btSerial.print("\r\n");
       free(packet);
       free(temp);
       return true;
@@ -278,7 +283,7 @@ public:
   void startSendingData(long from) {
     readingIterator = from;
   }
-  void sendSomePackets() {
+  void sendSomePackets(SoftwareSerial &btSerial) {
     if ( readingIterator == 0 ) {
       return;
     }
@@ -305,7 +310,7 @@ public:
           }
           buffer[i] = '\0';
           // Process a line
-          if ( processLine(buffer) ) {
+          if ( processLine(buffer, btSerial) ) {
             lines++;
           };
           if ( lines >= 5 ) {

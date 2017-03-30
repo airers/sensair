@@ -1,9 +1,11 @@
 #include "CommandProcessor.h"
 
+long CommandProcessor::timestampForSending = 0;
 void CommandProcessor::processPacket(byte type,
   uint8_t len, byte bytes[],
   SoftwareSerial &btSerial,
-  StateManager &stateManager) {
+  StateManager &stateManager,
+  FileProcessor &fileProcessor) {
 
   uint8_t packet_len = 0;
   switch ( type ) {
@@ -46,10 +48,31 @@ void CommandProcessor::processPacket(byte type,
     break;
     case CMD_GET_READINGS:
       // Count readings
+        Serial.println("Getting readings");
+        Serial.println(len);
+        if ( len >= 4 ) {
+          long_u timestamp;
+          timestamp.bytes[0] = bytes[0];
+          timestamp.bytes[1] = bytes[1];
+          timestamp.bytes[2] = bytes[2];
+          timestamp.bytes[3] = bytes[3];
+          Serial.println(timestamp.data);
+          stateManager.setTime(timestamp.data);
+          int readingCount = fileProcessor.countPackets(timestamp.data);
+          btSerial.write(CMD_READING_COUNT);
+          packet_len = 2;
+          btSerial.write(packet_len);
+          btSerial.write(readingCount);
+          btSerial.print("\r\n");
+          CommandProcessor::timestampForSending = timestamp.data;
+        }
+
       // Send reading count
     case CMD_READY_TO_RECEIVE:
       // Set state to packet sending mode
       // Send packets (not here, in main loop)
+      fileProcessor.startSendingData(CommandProcessor::timestampForSending);
+      CommandProcessor::timestampForSending = 0;
     case CMD_READINGS_RECEIVED:
       // Set state back to idle
     default:

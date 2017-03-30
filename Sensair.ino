@@ -35,11 +35,6 @@ long calculateNextMinute() {
 }
 
 
-
-
-
-
-
 void setup() {
   Serial.begin(9600); //Setting the speed of communication in bits per second; Arduino default: 9600
   btSerial.begin(9600);
@@ -71,64 +66,67 @@ void setup() {
 
 
 void loop() {
-  long loopTime = stateManager.getTimeStamp();
-  if ( loopTime > currentTime ) {
-    currentTime = loopTime;
+  {
+    long loopTime = stateManager.getTimeStamp();
+    if ( loopTime > currentTime ) {
+      currentTime = loopTime;
 
-    float voMeasured = 0;
-    float calcVoltage = 0;
-    float dustDensity = 0;
+      float voMeasured = 0;
+      float calcVoltage = 0;
+      float dustDensity = 0;
 
-    digitalWrite(LED_POWER_PIN ,LOW); //Turning on the LED; sinking current (i.e. light the LED connected through a series reistor to 5V)
-    delayMicroseconds(SAMPLING_TIME); //Duration of sampling
+      digitalWrite(LED_POWER_PIN ,LOW); //Turning on the LED; sinking current (i.e. light the LED connected through a series reistor to 5V)
+      delayMicroseconds(SAMPLING_TIME); //Duration of sampling
 
-    voMeasured = analogRead(MEASURE_PIN); //Reading the voltage measured
+      voMeasured = analogRead(MEASURE_PIN); //Reading the voltage measured
 
-    delayMicroseconds(deltaTime); //Completing excitation pulse
-    digitalWrite(LED_POWER_PIN ,HIGH); //Turning off the LED
-    delayMicroseconds(sleepTime); //Delay before next reading
+      delayMicroseconds(deltaTime); //Completing excitation pulse
+      digitalWrite(LED_POWER_PIN ,HIGH); //Turning off the LED
+      delayMicroseconds(sleepTime); //Delay before next reading
 
-    calcVoltage = voMeasured*(5.0/1024); //0-5V mapped to 0 - 1023 integer values for real voltage value
-    dustDensity = 0.17*calcVoltage-0.1; //Datasheet: Calibration curve
+      calcVoltage = voMeasured*(5.0/1024); //0-5V mapped to 0 - 1023 integer values for real voltage value
+      dustDensity = 0.17*calcVoltage-0.1; //Datasheet: Calibration curve
 
-    fileProcessor.pushData(dustDensity, 1.35432101, 103.8765432, 0);
-    // Average past minute readings & save as previous minute
-    // fileProcessor.openAppropiateFile(currentTime);
-    // fileProcessor.storeAverageData(currentTime, stateManager.microclimate);
+      fileProcessor.pushData(dustDensity, 1.35432101, 103.8765432, 0);
+      // Average past minute readings & save as previous minute
+      // fileProcessor.openAppropiateFile(currentTime);
+      // fileProcessor.storeAverageData(currentTime, stateManager.microclimate);
+    }
+    if ( currentTime >= nextMinuteTime ) {
+      long prevMinuteTime = nextMinuteTime - 60;
+      Serial.print("Averaging Readings for: ");
+      Serial.println(prevMinuteTime);
+
+      // Average past minute readings & save as previous minute
+      fileProcessor.openAppropiateFile(prevMinuteTime);
+      fileProcessor.storeAverageData(prevMinuteTime, stateManager.microclimate);
+      nextMinuteTime = calculateNextMinute();
+    }
   }
-  if ( currentTime >= nextMinuteTime ) {
-    long prevMinuteTime = nextMinuteTime - 60;
-    Serial.print("Averaging Readings for: ");
-    Serial.println(prevMinuteTime);
-
-    // Average past minute readings & save as previous minute
-    fileProcessor.openAppropiateFile(prevMinuteTime);
-    fileProcessor.storeAverageData(prevMinuteTime, stateManager.microclimate);
-    nextMinuteTime = calculateNextMinute();
-  }
-
 
   // Process the incoming bluetooth packets
-  byte type = 0;
-  uint8_t len = 0;
-  while ( btSerial.available() ) {
-    type = btSerial.read();
-    if ( btSerial.available() ) {
-      len = btSerial.read();
-    }
-    byte data [len];
-    int i = 0;
-    while ( i < len && btSerial.available() ) {
-      data[i] = btSerial.read();
-      i++;
-    }
+  {
+    byte type = 0;
+    uint8_t len = 0;
+    while ( btSerial.available() ) {
+      type = btSerial.read();
+      if ( btSerial.available() ) {
+        len = btSerial.read();
+      }
+      byte data [len];
+      int i = 0;
+      while ( i < len && btSerial.available() ) {
+        data[i] = btSerial.read();
+        i++;
+      }
 
-    CommandProcessor::processPacket(type, len, data, btSerial, stateManager);
+      CommandProcessor::processPacket(type, len, data, btSerial, stateManager, fileProcessor);
 
+    }
   }
 
   // Send packets if there's something requesting it
-  fileProcessor.sendSomePackets();
+  fileProcessor.sendSomePackets(btSerial);
 
   /**
    * Arduino date format
