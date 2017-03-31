@@ -227,17 +227,17 @@ public:
     }
   }
 
-  int countPackets(long from) {
+  uint16_t countPackets(long from) {
     Serial.println("Counting packets:");
-    int count = 0;
+    uint16_t count = 0;
     long startTime = millis();
-    long timeIterator = from;
-    char * filename = FileProcessor::timestampToFilename(timeIterator);
+    long countTimeIterator = from;
+    char * filename = FileProcessor::timestampToFilename(countTimeIterator);
     char * buffer = (char*)malloc(90);
 
     while (SD.exists(filename)) {
       Serial.print("Reading file:");
-      Serial.print(timeIterator);
+      Serial.print(countTimeIterator);
       Serial.print(" ");
       Serial.println(filename);
 
@@ -260,7 +260,8 @@ public:
             char * temp = (char*)malloc(15);
             getSplitSection(temp, buffer, 1);
             long timestamp = atol(temp);
-            if ( timestamp >= from ) {
+            if ( timestamp >= countTimeIterator ) {
+              Serial.println("Matched");
               matched = true;
               count++;
             }
@@ -268,12 +269,16 @@ public:
           }
         }
         Serial.println("File read");
+        currentFile.close();
+      } else {
+        break;
       }
-      currentFile.close();
-      timeIterator += 86400;
-      filename = FileProcessor::timestampToFilename(timeIterator);
 
-    }
+      countTimeIterator = FileProcessor::getStartOfDay(countTimeIterator) + 86400;
+      filename = FileProcessor::timestampToFilename(countTimeIterator);
+    } // end while (SD.exists(filename));
+
+    free(buffer);
     long duration = millis() - startTime;
     Serial.print("Duration: ");
     Serial.println(duration);

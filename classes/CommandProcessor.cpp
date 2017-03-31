@@ -11,7 +11,7 @@ void CommandProcessor::processPacket(byte type,
   switch ( type ) {
     case CMD_CONNECTION_CHECK:
     {
-      Serial.println("Received connection check");
+      // Serial.println("Received connection check");
       btSerial.write(CMD_CONNECTION_ACK);
       packet_len = 4;
       btSerial.write(packet_len);
@@ -58,16 +58,23 @@ void CommandProcessor::processPacket(byte type,
           timestamp.bytes[3] = bytes[3];
           Serial.println(timestamp.data);
           stateManager.setTime(timestamp.data);
-          int readingCount = fileProcessor.countPackets(timestamp.data);
+          uint16_u readingCount;
+          Serial.print("Getting reading count: ");
+          Serial.print(timestamp.data);
+          Serial.println(" ");
+          readingCount.data = fileProcessor.countPackets(timestamp.data);
           btSerial.write(CMD_READING_COUNT);
           packet_len = 2;
           btSerial.write(packet_len);
-          btSerial.write(readingCount);
+          btSerial.write(readingCount.bytes[0]);
+          btSerial.write(readingCount.bytes[1]);
           btSerial.print("\r\n");
+          Serial.println(readingCount.data);
           CommandProcessor::timestampForSending = timestamp.data;
         }
 
       // Send reading count
+      break;
     case CMD_READY_TO_RECEIVE:
       // Set state to packet sending mode
       // Send packets (not here, in main loop)
