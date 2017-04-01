@@ -19,14 +19,14 @@ private:
   bool cardAvailable;
 
   // Store the reading totals
-  double readingTotal;
-  double latTotal;
-  double lonTotal;
+  double readingTotal; // 4 bytes
+  double latTotal;     // 4 bytes
+  double lonTotal;     // 4 bytes
+  double elevationTotal; // 4 bytes
+  uint8_t readingCount;  // 4 btytes
 
   // Accuracy calculations
-  float lonMin, lonMax, latMin, latMax;
-  double elevationTotal;
-  uint8_t readingCount;
+  float lonMin, lonMax, latMin, latMax; // 16 bytes
 
   // Used for writing files
   File currentDayFile;
@@ -34,6 +34,7 @@ public:
   // Used for reading files
   // If the iterator is 0, it means the program is not sending files.
   long readingIterator = 0; //1490816240;
+  uint8_t packetsToSend = 0;
 
   static long getStartOfDay(long timestamp) {
     DateTime dateTime(timestamp);
@@ -75,6 +76,7 @@ public:
   }
   void init() {
     readingIterator = 0;
+    packetsToSend = 0;
     cardAvailable = false;
     if (!SD.begin(SD_PIN)) {
       Serial.println("SD Card Inaccessible");
@@ -82,6 +84,7 @@ public:
       Serial.println("SD Card Accessed");
       cardAvailable = true;
     }
+
   }
 
   void pushData (float reading, double lat, double lon, float elevation)  {
@@ -287,11 +290,12 @@ public:
     return count;
   }
 
-  void startSendingData(long from) {
+  void startSendingData(long from, uint16_t count) {
     readingIterator = from;
+    packetsToSend = count;
   }
   void sendSomePackets(SoftwareSerial &btSerial) {
-    if ( readingIterator == 0 ) {
+    if ( readingIterator == 0 || packetsToSend == 0 ) {
       return;
     }
 
@@ -319,10 +323,14 @@ public:
           // Process a line
           if ( processLine(buffer, btSerial) ) {
             lines++;
+            packetsToSend--;
+            if ( packetsToSend == 0 || lines >= 5 ) {
+              break;
+            }
           };
-          if ( lines >= 5 ) {
-            break;
-          }
+        }
+        if ( packetsToSend == 0 ) {
+          readingIterator = 0;
         }
         if ( lines == 0 ) {
           Serial.print("No more packets ");

@@ -1,6 +1,6 @@
 #include "CommandProcessor.h"
 
-long CommandProcessor::timestampForSending = 0;
+// long CommandProcessor::timestampForSending =0;
 void CommandProcessor::processPacket(byte type,
   uint8_t len, byte bytes[],
   SoftwareSerial &btSerial,
@@ -70,7 +70,7 @@ void CommandProcessor::processPacket(byte type,
           btSerial.write(readingCount.bytes[1]);
           btSerial.print("\r\n");
           Serial.println(readingCount.data);
-          CommandProcessor::timestampForSending = timestamp.data;
+          // CommandProcessor::timestampForSending = timestamp.data;
         }
 
       // Send reading count
@@ -90,7 +90,7 @@ void CommandProcessor::processPacket(byte type,
 
         // Set state to packet sending mode
         // Send packets (not here, in main loop)
-        fileProcessor.startSendingData(timestamp.data);
+        fileProcessor.startSendingData(timestamp.data, count.data);
         Serial.println("Gonna send data");
         Serial.println(timestamp.data);
         Serial.println(count.data);

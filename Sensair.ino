@@ -7,16 +7,19 @@
 #include "classes/CommandProcessor.cpp"
 #include "classes/StateManager.h"
 #include "classes/FileProcessor.h"
-
+#include "classes/EEPROMVariables.h"
 
 
 //Defining pins for Sharp sensor
 #define MEASURE_PIN A0
 #define LED_POWER_PIN 8
 
-unsigned int SAMPLING_TIME = 280; //Datasheet: Duration before measuring the ouput signal (after switching on LED): 280 µs
-unsigned int deltaTime = 40; //Datasheet: Duration of the whole excitation pulse: 320 µs; Duration before switching off LED: 40 µs
-unsigned int sleepTime = 9680; //Datasheet: Pulse Cycle: 10ms; Remaining time: 10,000 - 320 = 9680 µs
+// Datasheet: Duration before measuring the ouput signal (after switching on LED): 280 µs
+#define SAMPLING_TIME   280
+// Datasheet: Duration of the whole excitation pulse: 320 µs; Duration before switching off LED: 40 µs
+#define DELTA_TIME      40
+// Datasheet: Pulse Cycle: 10ms; Remaining time: 10,000 - 320 = 9680 µs
+#define SLEEP_TIME      9680
 
 #define BLUETOOTH_RX 7
 #define BLUETOOTH_TX 9
@@ -26,11 +29,11 @@ StateManager stateManager;
 FileProcessor fileProcessor;
 
 // Required for the file operations
-long currentTime;
-long nextMinuteTime;
+// long currentTime;
+// long nextMinuteTime;
 
 long calculateNextMinute() {
-  DateTime currentDateTime(currentTime);
+  DateTime currentDateTime(ROMVar::getCurrentTime());
   return currentDateTime.unixtime() + (60 - currentDateTime.second());
 }
 
@@ -43,12 +46,26 @@ void setup() {
   stateManager.init();
   fileProcessor.init();
 
-  currentTime = stateManager.getTimeStamp();
-  nextMinuteTime = calculateNextMinute();
+  ROMVar::setCurrentTime(stateManager.getTimeStamp());
+  ROMVar::setNextMinuteTime(calculateNextMinute());
 
   pinMode(LED_POWER_PIN ,OUTPUT); //Configures the digital pin as an output (to set it at 0V and 5V per cycle; turning on and off the LED
   pinMode(10, OUTPUT); //Configures the pin of the SD card reader as an output
 
+
+  long startTime = millis();
+
+  ROMVar::setCurrentTime(12345678);
+  long t = ROMVar::getCurrentTime();
+
+  long a = 123456;
+  a = a + 1;
+
+  long duration = millis() - startTime;
+  Serial.print("Duration: ");
+  Serial.println(duration);
+
+  Serial.println(t);
   /**
    * Tests show that it takes about 1.9ms to read a single line from a file
    * 2.4ms to do conversion of data
@@ -68,6 +85,9 @@ void setup() {
 void loop() {
   {
     long loopTime = stateManager.getTimeStamp();
+    long currentTime = ROMVar::getCurrentTime();
+    long nextMinuteTime = ROMVar::getNextMinuteTime();
+
     if ( loopTime > currentTime ) {
       currentTime = loopTime;
 
@@ -80,9 +100,9 @@ void loop() {
 
       voMeasured = analogRead(MEASURE_PIN); //Reading the voltage measured
 
-      delayMicroseconds(deltaTime); //Completing excitation pulse
+      delayMicroseconds(DELTA_TIME); //Completing excitation pulse
       digitalWrite(LED_POWER_PIN ,HIGH); //Turning off the LED
-      delayMicroseconds(sleepTime); //Delay before next reading
+      delayMicroseconds(SLEEP_TIME); //Delay before next reading
 
       calcVoltage = voMeasured*(5.0/1024); //0-5V mapped to 0 - 1023 integer values for real voltage value
       dustDensity = 0.17*calcVoltage-0.1; //Datasheet: Calibration curve
@@ -102,6 +122,9 @@ void loop() {
       // fileProcessor.storeAverageData(prevMinuteTime, stateManager.microclimate);
       nextMinuteTime = calculateNextMinute();
     }
+
+    ROMVar::setCurrentTime(currentTime);
+    ROMVar::setNextMinuteTime(nextMinuteTime);
   }
 
   // Process the incoming bluetooth packets
