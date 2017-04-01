@@ -7,6 +7,7 @@
 #include <Arduino.h>
 #include <SD.h>
 #include "RTClib.h"
+#include "EEPROMVariables.h"
 
 // #define CMD_READING_COUNT         8
 
@@ -18,15 +19,11 @@ class FileProcessor {
 private:
   bool cardAvailable;
 
-  // Store the reading totals
-  double readingTotal; // 4 bytes
-  double latTotal;     // 4 bytes
-  double lonTotal;     // 4 bytes
-  double elevationTotal; // 4 bytes
+  // Reading totals and accuracy calculations are now
+  // stored in the EEPROM Memory
+  // float readingTotal, latTotal, lonTotal, eleTotal;
+  // float latMin, latMax, lonMin, lonMax;
   uint8_t readingCount;  // 4 btytes
-
-  // Accuracy calculations
-  float lonMin, lonMax, latMin, latMax; // 16 bytes
 
   // Used for writing files
   File currentDayFile;
@@ -71,10 +68,15 @@ public:
     }
     return filename;
   }
+
+
   FileProcessor() {
 
   }
   void init() {
+    float zero = 0;
+    ROMVar::setAccuracyVars(zero,zero,zero,zero);
+    ROMVar::setAverageVars(zero,zero,zero,zero);
     readingIterator = 0;
     packetsToSend = 0;
     cardAvailable = false;
@@ -84,24 +86,31 @@ public:
       Serial.println("SD Card Accessed");
       cardAvailable = true;
     }
-
   }
 
-  void pushData (float reading, double lat, double lon, float elevation)  {
+  void pushData (float reading, float lat, float lon, float elevation)  {
+    float readingTotal, latTotal, lonTotal, eleTotal;
+    float latMin, latMax, lonMin, lonMax;
+    ROMVar::getAverageVars(readingTotal, latTotal, lonTotal, eleTotal);
+    ROMVar::getAccuracyVars(lonMin, lonMax, latMin, latMax);
+
     readingTotal += reading;
     latTotal += lat;
     lonTotal += lon;
-    elevationTotal += elevation;
-    readingCount++;
+    eleTotal += elevation;
     // Accuracy
-    float latF = lat;
-    float lonF = lat;
-    if ( latMin == 0 && latMax == 0 ) latMin = latMax = latF;
-    if ( lonMin == 0 && lonMax == 0 ) lonMin = lonMax = lonF;
-    if ( latMin > latF ) latMin = latF;
-    if ( latMax < latF ) latMax = latF;
-    if ( lonMin > lonF ) lonMin = lonF;
-    if ( lonMax < lonF ) lonMax = lonF;
+    if ( latMin == 0 && latMax == 0 ) latMin = latMax = lat;
+    if ( lonMin == 0 && lonMax == 0 ) lonMin = lonMax = lon;
+    if ( latMin > lat ) latMin = lat;
+    if ( latMax < lat ) latMax = lat;
+    if ( lonMin > lon ) lonMin = lon;
+    if ( lonMax < lon ) lonMax = lon;
+
+    readingCount++;
+
+    ROMVar::setAverageVars(readingTotal, latTotal, lonTotal, eleTotal);
+    ROMVar::setAccuracyVars(lonMin, lonMax, latMin, latMax);
+
   }
 
   void openAppropiateFile(long timestamp)  {
@@ -115,13 +124,19 @@ public:
   }
 
   void storeAverageData(long minuteTime, uint8_t microclimate) {
-    double readingAvg = readingTotal / readingCount;
-    double latAvg = latTotal / readingCount;
-    double lonAvg = lonTotal / readingCount;
-    double elevationAvg = elevationAvg / readingCount;
+    float readingTotal, latTotal, lonTotal, eleTotal;
+    float latMin, latMax, lonMin, lonMax;
+    ROMVar::getAverageVars(readingTotal, latTotal, lonTotal, eleTotal);
+    ROMVar::getAccuracyVars(lonMin, lonMax, latMin, latMax);
+
+    float readingAvg = readingTotal / readingCount;
+    float latAvg = latTotal / readingCount;
+    float lonAvg = lonTotal / readingCount;
+    float elevationAvg = elevationAvg / readingCount;
     float accuracy = ((latMax-latMin) * (latMax-latMin)) + ((lonMax-lonMin) * (lonMax-lonMin));
-    readingTotal = latTotal = lonTotal = elevationTotal = 0.0;
-    lonMin = lonMax = latMin = latMax = 0.0;
+    float zero = 0;
+    ROMVar::setAccuracyVars(zero,zero,zero,zero);
+    ROMVar::setAverageVars(zero,zero,zero,zero);
     readingCount = 0;
 
     if ( currentDayFile ) {
