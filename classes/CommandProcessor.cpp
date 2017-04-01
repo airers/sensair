@@ -69,7 +69,8 @@ void CommandProcessor::processPacket(byte type,
           Serial.write(C_LR);
           // -Serial.print(timestamp.data);
           // -Serial.println(" ");
-          readingCount.data = fileProcessor.countPackets(timestamp.data);
+          // readingCount.data = fileProcessor.countPackets(timestamp.data);
+          readingCount.data = 70;
           btSerial.write(CMD_READING_COUNT);
           packet_len = 2;
           btSerial.write(packet_len);
@@ -84,7 +85,7 @@ void CommandProcessor::processPacket(byte type,
       // Send reading count
       break;
     case CMD_READY_TO_RECEIVE:
-    // -Serial.println("Ready to receive");
+      Serial.println("RTR");
       if ( len >= 6 ) {
         long_u timestamp;
         timestamp.bytes[0] = bytes[0];
@@ -98,7 +99,7 @@ void CommandProcessor::processPacket(byte type,
 
         // Set state to packet sending mode
         // Send packets (not here, in main loop)
-        // fileProcessor.startSendingData(timestamp.data, count.data);
+        fileProcessor.startSendingData(timestamp.data, count.data);
         // -Serial.println("Gonna send data");
         // -Serial.println(timestamp.data);
         // -Serial.println(count.data);

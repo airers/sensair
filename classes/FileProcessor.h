@@ -200,6 +200,7 @@ public:
     long timestamp = atol(temp);
 
     if ( timestamp >= readingIterator) {
+      Serial.println(timestamp);
       readingIterator = timestamp + 1;
       byte * packet = (byte*)malloc(25);
       memcpy(packet, &timestamp, 4);
@@ -254,13 +255,13 @@ public:
     long countTimeIterator = from;
     char * filename = FileProcessor::timestampToFilename(countTimeIterator);
     char * buffer = (char*)malloc(100);
-
+    char * temp = (char*)malloc(15);
     while (SD.exists(filename)) {
       // -Serial.print("Reading file:");
       // -Serial.print(countTimeIterator);
       // -Serial.print(" ");
       // -Serial.println(filename);
-      ROMVar::printFreeRam();
+      // ROMVar::printFreeRam();
 
       Serial.write(C_F);
       Serial.write(C_LR);
@@ -288,17 +289,16 @@ public:
           if (matched) {
             count++;
           } else {
-            char * temp = (char*)malloc(15);
             getSplitSection(temp, buffer, 1);
             long timestamp = atol(temp);
-            // Serial.println(timestamp);
+            Serial.println(timestamp);
             if ( timestamp >= countTimeIterator ) {
               Serial.write(C_M);
               Serial.write(C_LR);
               matched = true;
               count++;
             }
-            free(temp);
+
           }
         }
         currentFile.close();
@@ -313,9 +313,10 @@ public:
       filename = FileProcessor::timestampToFilename(countTimeIterator);
     } // end while (SD.exists(filename));
 
+    free(temp);
     free(buffer);
     free(filename);
-    long duration = millis() - startTime;
+    // long duration = millis() - startTime;
     // -Serial.print("Duration: ");
     // -Serial.println(duration);
 
@@ -336,8 +337,9 @@ public:
     char * filename = FileProcessor::timestampToFilename(readingIterator);
     if ( SD.exists(filename) ) {
       // -Serial.print("Sending packets from: ");
-
-      // -Serial.println(filename);
+      Serial.write(C_S);
+      Serial.write(C_SP);
+      Serial.println(filename);
 
       long startTime = millis();
       File currentFile = SD.open(filename, FILE_READ);
