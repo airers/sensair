@@ -76,14 +76,32 @@ void CommandProcessor::processPacket(byte type,
       // Send reading count
       break;
     case CMD_READY_TO_RECEIVE:
-      // Set state to packet sending mode
-      // Send packets (not here, in main loop)
-      fileProcessor.startSendingData(CommandProcessor::timestampForSending);
-      CommandProcessor::timestampForSending = 0;
+    Serial.println("Ready to receive");
+      if ( len >= 6 ) {
+        long_u timestamp;
+        timestamp.bytes[0] = bytes[0];
+        timestamp.bytes[1] = bytes[1];
+        timestamp.bytes[2] = bytes[2];
+        timestamp.bytes[3] = bytes[3];
+
+        uint16_u count;
+        count.bytes[0] = bytes[4];
+        count.bytes[1] = bytes[5];
+
+        // Set state to packet sending mode
+        // Send packets (not here, in main loop)
+        fileProcessor.startSendingData(timestamp.data);
+        Serial.println("Gonna send data");
+        Serial.println(timestamp.data);
+        Serial.println(count.data);
+      }
+      break;
     case CMD_READINGS_RECEIVED:
       // Set state back to idle
+      break;
     default:
       // Error!
+      Serial.print(type);
       Serial.println(" :Wrong command");
     break;
   }

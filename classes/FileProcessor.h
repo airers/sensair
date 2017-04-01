@@ -233,7 +233,7 @@ public:
     long startTime = millis();
     long countTimeIterator = from;
     char * filename = FileProcessor::timestampToFilename(countTimeIterator);
-    char * buffer = (char*)malloc(90);
+    char * buffer = (char*)malloc(100);
 
     while (SD.exists(filename)) {
       Serial.print("Reading file:");
@@ -244,6 +244,7 @@ public:
       File currentFile = SD.open(filename, FILE_READ);
       bool matched = false;
       if ( currentFile ) {
+        Serial.println("File read");
         while ( currentFile.available() ) {
           char r = '\0';
           int i = 0;
@@ -260,6 +261,7 @@ public:
             char * temp = (char*)malloc(15);
             getSplitSection(temp, buffer, 1);
             long timestamp = atol(temp);
+            // Serial.println(timestamp);
             if ( timestamp >= countTimeIterator ) {
               Serial.println("Matched");
               matched = true;
@@ -268,7 +270,6 @@ public:
             free(temp);
           }
         }
-        Serial.println("File read");
         currentFile.close();
       } else {
         break;
@@ -279,6 +280,7 @@ public:
     } // end while (SD.exists(filename));
 
     free(buffer);
+    free(filename);
     long duration = millis() - startTime;
     Serial.print("Duration: ");
     Serial.println(duration);

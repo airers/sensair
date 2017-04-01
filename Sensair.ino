@@ -98,8 +98,8 @@ void loop() {
       Serial.println(prevMinuteTime);
 
       // Average past minute readings & save as previous minute
-      fileProcessor.openAppropiateFile(prevMinuteTime);
-      fileProcessor.storeAverageData(prevMinuteTime, stateManager.microclimate);
+      // fileProcessor.openAppropiateFile(prevMinuteTime);
+      // fileProcessor.storeAverageData(prevMinuteTime, stateManager.microclimate);
       nextMinuteTime = calculateNextMinute();
     }
   }
