@@ -246,6 +246,8 @@ public:
   }
 
   uint16_t countPackets(long from) {
+    // Serial.print("Start counting ");
+    // ROMVar::printFreeRam();
     Serial.println("Counting packets:");
     uint16_t count = 0;
     long startTime = millis();
@@ -289,9 +291,13 @@ public:
           }
         }
         currentFile.close();
+        free(&currentFile);
       } else {
         break;
       }
+
+      // Serial.print("End counting");
+      // ROMVar::printFreeRam();
 
       countTimeIterator = FileProcessor::getStartOfDay(countTimeIterator) + 86400;
       filename = FileProcessor::timestampToFilename(countTimeIterator);
@@ -302,6 +308,9 @@ public:
     long duration = millis() - startTime;
     Serial.print("Duration: ");
     Serial.println(duration);
+
+    // ROMVar::printFreeRam();
+
     return count;
   }
 
@@ -353,6 +362,7 @@ public:
           Serial.println(readingIterator);
         }
         currentFile.close();
+        free(&currentFile);
         free(buffer);
       }
       // long duration = millis() - startTime;

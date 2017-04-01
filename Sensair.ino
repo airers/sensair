@@ -66,6 +66,7 @@ void setup() {
   Serial.println(duration);
 
   Serial.println(t);
+
   /**
    * Tests show that it takes about 1.9ms to read a single line from a file
    * 2.4ms to do conversion of data
@@ -83,6 +84,27 @@ void setup() {
 
 
 void loop() {
+  // Process the incoming bluetooth packets
+  {
+    byte type = 0;
+    uint8_t len = 0;
+    while ( btSerial.available() ) {
+      type = btSerial.read();
+      if ( btSerial.available() ) {
+        len = btSerial.read();
+      }
+      byte data [len];
+      int i = 0;
+      while ( i < len && btSerial.available() ) {
+        data[i] = btSerial.read();
+        i++;
+      }
+
+      CommandProcessor::processPacket(type, len, data, btSerial, stateManager, fileProcessor);
+
+    }
+  }
+
   {
     long loopTime = stateManager.getTimeStamp();
     long currentTime = ROMVar::getCurrentTime();
@@ -125,27 +147,6 @@ void loop() {
 
     ROMVar::setCurrentTime(currentTime);
     ROMVar::setNextMinuteTime(nextMinuteTime);
-  }
-
-  // Process the incoming bluetooth packets
-  {
-    byte type = 0;
-    uint8_t len = 0;
-    while ( btSerial.available() ) {
-      type = btSerial.read();
-      if ( btSerial.available() ) {
-        len = btSerial.read();
-      }
-      byte data [len];
-      int i = 0;
-      while ( i < len && btSerial.available() ) {
-        data[i] = btSerial.read();
-        i++;
-      }
-
-      CommandProcessor::processPacket(type, len, data, btSerial, stateManager, fileProcessor);
-
-    }
   }
 
   // Send packets if there's something requesting it

@@ -50,6 +50,7 @@ void CommandProcessor::processPacket(byte type,
       // Count readings
         Serial.println("Getting readings");
         Serial.println(len);
+
         if ( len >= 4 ) {
           long_u timestamp;
           timestamp.bytes[0] = bytes[0];
@@ -90,7 +91,7 @@ void CommandProcessor::processPacket(byte type,
 
         // Set state to packet sending mode
         // Send packets (not here, in main loop)
-        fileProcessor.startSendingData(timestamp.data, count.data);
+        // fileProcessor.startSendingData(timestamp.data, count.data);
         Serial.println("Gonna send data");
         Serial.println(timestamp.data);
         Serial.println(count.data);
