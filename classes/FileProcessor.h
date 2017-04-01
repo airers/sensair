@@ -81,9 +81,9 @@ public:
     packetsToSend = 0;
     cardAvailable = false;
     if (!SD.begin(SD_PIN)) {
-      Serial.println("SD Card Inaccessible");
+      // -Serial.println("SD Card Inaccessible");
     } else {
-      Serial.println("SD Card Accessed");
+      // -Serial.println("SD Card Accessed");
       cardAvailable = true;
     }
   }
@@ -118,8 +118,8 @@ public:
     char * filename = FileProcessor::timestampToFilename(timestamp);
     currentDayFile = SD.open(filename, FILE_WRITE);
     if ( currentDayFile ) {
-      Serial.print("Storing data in ");
-      Serial.println(filename);
+      // -Serial.print("Storing data in ");
+      // -Serial.println(filename);
     }
   }
 
@@ -246,9 +246,9 @@ public:
   }
 
   uint16_t countPackets(long from) {
-    // Serial.print("Start counting ");
+    // // -Serial.print("Start counting ");
     // ROMVar::printFreeRam();
-    Serial.println("Counting packets:");
+    // -Serial.println("Counting packets:");
     uint16_t count = 0;
     long startTime = millis();
     long countTimeIterator = from;
@@ -256,15 +256,25 @@ public:
     char * buffer = (char*)malloc(100);
 
     while (SD.exists(filename)) {
-      Serial.print("Reading file:");
+      // -Serial.print("Reading file:");
+      // -Serial.print(countTimeIterator);
+      // -Serial.print(" ");
+      // -Serial.println(filename);
+      ROMVar::printFreeRam();
+
+      Serial.write(C_F);
+      Serial.write(C_LR);
+
       Serial.print(countTimeIterator);
-      Serial.print(" ");
+      Serial.write(C_SP);
       Serial.println(filename);
 
       File currentFile = SD.open(filename, FILE_READ);
       bool matched = false;
       if ( currentFile ) {
-        Serial.println("File read");
+        // -Serial.println("File read");
+        Serial.write(C_R);
+        Serial.write(C_LR);
         while ( currentFile.available() ) {
           char r = '\0';
           int i = 0;
@@ -283,7 +293,8 @@ public:
             long timestamp = atol(temp);
             // Serial.println(timestamp);
             if ( timestamp >= countTimeIterator ) {
-              Serial.println("Matched");
+              Serial.write(C_M);
+              Serial.write(C_LR);
               matched = true;
               count++;
             }
@@ -296,8 +307,7 @@ public:
         break;
       }
 
-      // Serial.print("End counting");
-      // ROMVar::printFreeRam();
+      // // -Serial.print("End counting");
 
       countTimeIterator = FileProcessor::getStartOfDay(countTimeIterator) + 86400;
       filename = FileProcessor::timestampToFilename(countTimeIterator);
@@ -306,8 +316,8 @@ public:
     free(buffer);
     free(filename);
     long duration = millis() - startTime;
-    Serial.print("Duration: ");
-    Serial.println(duration);
+    // -Serial.print("Duration: ");
+    // -Serial.println(duration);
 
     // ROMVar::printFreeRam();
 
@@ -325,9 +335,9 @@ public:
 
     char * filename = FileProcessor::timestampToFilename(readingIterator);
     if ( SD.exists(filename) ) {
-      Serial.print("Sending packets from: ");
+      // -Serial.print("Sending packets from: ");
 
-      Serial.println(filename);
+      // -Serial.println(filename);
 
       long startTime = millis();
       File currentFile = SD.open(filename, FILE_READ);
@@ -357,21 +367,21 @@ public:
           readingIterator = 0;
         }
         if ( lines == 0 ) {
-          Serial.print("No more packets ");
+          // -Serial.print("No more packets ");
           readingIterator = FileProcessor::getStartOfDay(readingIterator) + 86400;
-          Serial.println(readingIterator);
+          // -Serial.println(readingIterator);
         }
         currentFile.close();
         free(&currentFile);
         free(buffer);
       }
       // long duration = millis() - startTime;
-      // Serial.print("Duration: ");
-      // Serial.println(duration);
+      // // -Serial.print("Duration: ");
+      // // -Serial.println(duration);
 
     } else {
-      Serial.print(filename);
-      Serial.println(" does not exist.");
+      // -Serial.print(filename);
+      // -Serial.println(" does not exist.");
       readingIterator = 0;
     }
   }
