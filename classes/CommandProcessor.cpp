@@ -58,6 +58,10 @@ void CommandProcessor::processPacket(byte type,
           timestamp.bytes[1] = bytes[1];
           timestamp.bytes[2] = bytes[2];
           timestamp.bytes[3] = bytes[3];
+
+          if ( timestamp.data < fileProcessor.getFirstReading() ) {
+            timestamp.data = fileProcessor.getFirstReading();
+          }
           // -Serial.println(timestamp.data);
           // stateManager.setTime(timestamp.data);
           uint16_u readingCount;
@@ -91,6 +95,10 @@ void CommandProcessor::processPacket(byte type,
         timestamp.bytes[2] = bytes[2];
         timestamp.bytes[3] = bytes[3];
 
+        if ( timestamp.data < fileProcessor.getFirstReading() ) {
+          timestamp.data = fileProcessor.getFirstReading();
+        }
+
         uint16_u count;
         count.bytes[0] = bytes[4];
         count.bytes[1] = bytes[5];
@@ -100,7 +108,7 @@ void CommandProcessor::processPacket(byte type,
         fileProcessor.startSendingData(timestamp.data, count.data);
         // -Serial.println("Gonna send data");
         Serial.println(timestamp.data);
-        // -Serial.println(count.data);
+        Serial.println(count.data);
         // fileProcessor.startSendingData(1490830040, 100);
       }
       break;

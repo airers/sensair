@@ -9,8 +9,6 @@
 #include "RTClib.h"
 #include "EEPROMVariables.h"
 
-// #define CMD_READING_COUNT         8
-
 
 //Defining the pin for the SD Card reader
 #define SD_PIN 10
@@ -27,11 +25,12 @@ private:
 
   // Used for writing files
   File currentDayFile;
+  long firstReading; // Timestamp for the first reading
 public:
   // Used for reading files
   // If the iterator is 0, it means the program is not sending files.
   long readingIterator = 0; //1490816240;
-  uint8_t packetsToSend = 0;
+  uint16_t packetsToSend = 0;
 
   static long getStartOfDay(long timestamp) {
     DateTime dateTime(timestamp);
@@ -69,10 +68,10 @@ public:
     return filename;
   }
 
-
   FileProcessor() {
 
   }
+
   void init() {
     float zero = 0;
     ROMVar::setAccuracyVars(zero,zero,zero,zero);
@@ -80,12 +79,19 @@ public:
     readingIterator = 0;
     packetsToSend = 0;
     cardAvailable = false;
-    if (!SD.begin(SD_PIN)) {
-      // -Serial.println("SD Card Inaccessible");
-    } else {
-      // -Serial.println("SD Card Accessed");
+    firstReading = ROMVar::getFirstReading();
+    if (SD.begin(SD_PIN)) {
       cardAvailable = true;
     }
+  }
+
+  long setFirstReading(long time) {
+    firstReading = time;
+    ROMVar::setFirstReading(firstReading);
+  }
+
+  long getFirstReading() {
+    return firstReading;
   }
 
   void pushData (float reading, float lat, float lon, float elevation)  {
@@ -110,7 +116,6 @@ public:
 
     ROMVar::setAverageVars(readingTotal, latTotal, lonTotal, eleTotal);
     ROMVar::setAccuracyVars(lonMin, lonMax, latMin, latMax);
-
   }
 
   void openAppropiateFile(long timestamp)  {
@@ -138,6 +143,10 @@ public:
     ROMVar::setAccuracyVars(zero,zero,zero,zero);
     ROMVar::setAverageVars(zero,zero,zero,zero);
     readingCount = 0;
+
+    if ( firstReading == 0 ) {
+      setFirstReading(firstReading);
+    }
 
     if ( currentDayFile ) {
       DateTime now(minuteTime);

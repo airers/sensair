@@ -84,6 +84,7 @@ void setup() {
   // count = fileProcessor.countPackets2(1490830040);
   // Serial.println(count);
   // fileProcessor.startSendingData(1490830040, 100);
+  Serial.println(fileProcessor.getFirstReading());
   Serial.write(C_S);
   Serial.write(C_T);
   Serial.write(C_A);
@@ -140,9 +141,6 @@ void loop() {
       dustDensity = 0.17*calcVoltage-0.1; //Datasheet: Calibration curve
 
       fileProcessor.pushData(dustDensity, 1.35432101, 103.8765432, 0);
-      // Average past minute readings & save as previous minute
-      // fileProcessor.openAppropiateFile(currentTime);
-      // fileProcessor.storeAverageData(currentTime, stateManager.microclimate);
     }
     if ( currentTime >= nextMinuteTime ) {
       long prevMinuteTime = nextMinuteTime - 60;
@@ -150,8 +148,8 @@ void loop() {
       // -Serial.println(prevMinuteTime);
 
       // Average past minute readings & save as previous minute
-      // fileProcessor.openAppropiateFile(prevMinuteTime);
-      // fileProcessor.storeAverageData(prevMinuteTime, stateManager.microclimate);
+      fileProcessor.openAppropiateFile(prevMinuteTime);
+      fileProcessor.storeAverageData(prevMinuteTime, stateManager.microclimate);
       nextMinuteTime = calculateNextMinute();
     }
 
