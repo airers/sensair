@@ -291,7 +291,7 @@ public:
           } else {
             getSplitSection(temp, buffer, 1);
             long timestamp = atol(temp);
-            Serial.println(timestamp);
+            // Serial.println(timestamp);
             if ( timestamp >= countTimeIterator ) {
               Serial.write(C_M);
               Serial.write(C_LR);
@@ -302,7 +302,7 @@ public:
           }
         }
         currentFile.close();
-        free(&currentFile);
+        // free(&currentFile);
       } else {
         break;
       }
@@ -329,6 +329,53 @@ public:
     readingIterator = from;
     packetsToSend = count;
   }
+
+  uint16_t countPackets2(long from) {
+    uint16_t count = 0;
+    long countReadingIterator = from;
+    char * buffer = (char*)malloc(90);
+    char * temp = (char*)malloc(15);
+
+    while ( true ) {
+      char * filename = FileProcessor::timestampToFilename(countReadingIterator);
+      Serial.write(C_C);
+      Serial.write(C_SP);
+      Serial.println(filename);
+      if ( !SD.exists(filename) ) {
+        break;
+      }
+      // long startTime = millis();
+      File currentFile = SD.open(filename, FILE_READ);
+      if ( currentFile ) {
+        while ( currentFile.available() ) {
+          char r = '\0';
+          int i = 0;
+          while ( r != '\n' ) {
+            if ( !currentFile.available() ) break;
+            r = currentFile.read();
+            buffer[i] = r;
+            i++;
+          }
+          buffer[i] = '\0';
+          // Process a line
+          getSplitSection(temp, buffer, 1);
+          long timestamp = atol(temp);
+
+          if ( timestamp >= countReadingIterator) {
+            count++;
+          }
+        }
+        currentFile.close();
+        countReadingIterator = FileProcessor::getStartOfDay(countReadingIterator) + 86400;
+      }
+    }
+
+    free (temp);
+    free(buffer);
+    return count;
+  }
+
+
   void sendSomePackets(SoftwareSerial &btSerial) {
     if ( readingIterator == 0 || packetsToSend == 0 ) {
       return;
@@ -374,7 +421,7 @@ public:
           // -Serial.println(readingIterator);
         }
         currentFile.close();
-        free(&currentFile);
+        // free(&currentFile);
         free(buffer);
       }
       // long duration = millis() - startTime;
