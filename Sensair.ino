@@ -24,6 +24,8 @@
 #define BLUETOOTH_RX 7
 #define BLUETOOTH_TX 9
 
+#define BAUD_RATE     9600
+
 SoftwareSerial btSerial(BLUETOOTH_RX, BLUETOOTH_TX);
 StateManager stateManager;
 FileProcessor fileProcessor;
@@ -39,8 +41,8 @@ long calculateNextMinute() {
 
 
 void setup() {
-  Serial.begin(9600); //Setting the speed of communication in bits per second; Arduino default: 9600
-  btSerial.begin(9600);
+  Serial.begin(BAUD_RATE); //Setting the speed of communication in bits per second; Arduino default: 9600
+  btSerial.begin(BAUD_RATE);
   Wire.begin();
 
   stateManager.init();
@@ -51,20 +53,6 @@ void setup() {
 
   pinMode(LED_POWER_PIN ,OUTPUT); //Configures the digital pin as an output (to set it at 0V and 5V per cycle; turning on and off the LED
   pinMode(10, OUTPUT); //Configures the pin of the SD card reader as an output
-
-
-  long startTime = millis();
-
-  ROMVar::setCurrentTime(12345678);
-  long t = ROMVar::getCurrentTime();
-
-  long a = 123456;
-  a = a + 1;
-
-  long duration = millis() - startTime;
-  // -Serial.print("Duration: ");
-  // -Serial.println(duration);
-  // -Serial.println(t);
 
   /**
    * Tests show that it takes about 1.9ms to read a single line from a file
@@ -112,7 +100,6 @@ void loop() {
       }
 
       CommandProcessor::processPacket(type, len, data, btSerial, stateManager, fileProcessor);
-
     }
   }
 
@@ -140,12 +127,11 @@ void loop() {
       calcVoltage = voMeasured*(5.0/1024); //0-5V mapped to 0 - 1023 integer values for real voltage value
       dustDensity = 0.17*calcVoltage-0.1; //Datasheet: Calibration curve
 
+      // TODO: Not hardcode the microclimate and location
       fileProcessor.pushData(dustDensity, 1.35432101, 103.8765432, 0);
     }
     if ( currentTime >= nextMinuteTime ) {
       long prevMinuteTime = nextMinuteTime - 60;
-      // -Serial.print("Averaging Readings for: ");
-      // -Serial.println(prevMinuteTime);
 
       // Average past minute readings & save as previous minute
       fileProcessor.openAppropiateFile(prevMinuteTime);
@@ -172,5 +158,5 @@ void loop() {
    */
 
 
-  delay(100); //Time interval before each printed reading
+  delay(50);
 }
