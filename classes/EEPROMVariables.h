@@ -105,7 +105,10 @@ public:
   }
 
   static void printFreeRam() {
-    Serial.print("---- Available memmory ----- : ");
+    Serial.write(C_M);
+    Serial.write(C_E);
+    Serial.write(C_M);
+    Serial.write(C_SP);
     Serial.println(freeRam());
   }
 

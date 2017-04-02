@@ -62,10 +62,9 @@ void setup() {
   a = a + 1;
 
   long duration = millis() - startTime;
-  Serial.print("Duration: ");
-  Serial.println(duration);
-
-  Serial.println(t);
+  // -Serial.print("Duration: ");
+  // -Serial.println(duration);
+  // -Serial.println(t);
 
   /**
    * Tests show that it takes about 1.9ms to read a single line from a file
@@ -76,6 +75,21 @@ void setup() {
    * This will result in reading loses of 2 seconds.
    * This is not a problem, just something to take note.
    */
+  uint16_t count = fileProcessor.countPackets2(1490830040);
+  Serial.println(count);
+  count = fileProcessor.countPackets2(1490830040);
+  Serial.println(count);
+  count = fileProcessor.countPackets2(1490830040);
+  Serial.println(count);
+  count = fileProcessor.countPackets2(1490830040);
+  Serial.println(count);
+  fileProcessor.startSendingData(1490830040, 100);
+  Serial.write(C_S);
+  Serial.write(C_T);
+  Serial.write(C_A);
+  Serial.write(C_R);
+  Serial.write(C_T);
+  Serial.write(C_LR);
 }
 
 
@@ -132,8 +146,8 @@ void loop() {
     }
     if ( currentTime >= nextMinuteTime ) {
       long prevMinuteTime = nextMinuteTime - 60;
-      Serial.print("Averaging Readings for: ");
-      Serial.println(prevMinuteTime);
+      // -Serial.print("Averaging Readings for: ");
+      // -Serial.println(prevMinuteTime);
 
       // Average past minute readings & save as previous minute
       // fileProcessor.openAppropiateFile(prevMinuteTime);
