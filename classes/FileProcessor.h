@@ -200,7 +200,6 @@ public:
     long timestamp = atol(temp);
 
     if ( timestamp >= readingIterator) {
-      Serial.println(timestamp);
       readingIterator = timestamp + 1;
       byte * packet = (byte*)malloc(25);
       memcpy(packet, &timestamp, 4);
@@ -229,7 +228,7 @@ public:
       float acc = atof(temp);
       memcpy(packet + 20, &acc, 4);
 
-      uint8_t command = 8;
+      uint8_t command = CMD_READING_PACKET;
       btSerial.write(command);
       uint8_t packet_len = 25;
       btSerial.write(packet_len);
@@ -412,11 +411,13 @@ public:
             }
           };
         }
+        Serial.println(packetsToSend);
         if ( packetsToSend == 0 ) {
+          Serial.println("Done");
           readingIterator = 0;
         }
         if ( lines == 0 ) {
-          // -Serial.print("No more packets ");
+          Serial.print("No more packets ");
           readingIterator = FileProcessor::getStartOfDay(readingIterator) + 86400;
           // -Serial.println(readingIterator);
         }
