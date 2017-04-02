@@ -76,10 +76,6 @@ void setup() {
    * This will result in reading loses of 2 seconds.
    * This is not a problem, just something to take note.
    */
-  //  int packets = fileProcessor.countPackets(1490830040);
-  //  Serial.println(packets);
-   //
-  //  fileProcessor.startSendingData(1490830040);
 }
 
 
