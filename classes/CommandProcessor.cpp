@@ -65,13 +65,13 @@ void CommandProcessor::processPacket(byte type,
           // -Serial.println(timestamp.data);
           // stateManager.setTime(timestamp.data);
           uint16_u readingCount;
-          Serial.write(C_R);
-          Serial.write(C_D);
-          Serial.write(C_SP);
-          Serial.write(C_C);
-          Serial.write(C_T);
-          Serial.write(C_LR);
-          Serial.print(timestamp.data);
+          // Serial.write(C_R);
+          // Serial.write(C_D);
+          // Serial.write(C_SP);
+          // Serial.write(C_C);
+          // Serial.write(C_T);
+          // Serial.write(C_LR);
+          // Serial.print(timestamp.data);
           // -Serial.println(" ");
           readingCount.data = fileProcessor.countPackets2(timestamp.data);
           btSerial.write(CMD_READING_COUNT);
@@ -81,13 +81,13 @@ void CommandProcessor::processPacket(byte type,
           btSerial.write(readingCount.bytes[1]);
           btSerial.print("\r\n");
 
-          Serial.println(readingCount.data);
+          // Serial.println(readingCount.data);
         }
 
       // Send reading count
       break;
     case CMD_READY_TO_RECEIVE:
-      Serial.println("RTR");
+      // Serial.println("RTR");
       if ( len >= 6 ) {
         long_u timestamp;
         timestamp.bytes[0] = bytes[0];
@@ -107,8 +107,8 @@ void CommandProcessor::processPacket(byte type,
         // Send packets (not here, in main loop)
         fileProcessor.startSendingData(timestamp.data, count.data);
         // -Serial.println("Gonna send data");
-        Serial.println(timestamp.data);
-        Serial.println(count.data);
+        // Serial.println(timestamp.data);
+        // Serial.println(count.data);
         // fileProcessor.startSendingData(1490830040, 100);
       }
       break;

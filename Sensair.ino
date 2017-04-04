@@ -1,6 +1,17 @@
+//Including library for TFT Screen 
+//#include <Adafruit_GFX.h>    // Core graphics library
+//#include <Adafruit_ST7735.h> // Hardware-specific library
+//#include <SPI.h>
+
+//Including library for DHT22 (Temp and RH sensor)
+#include <DHT.h>;
+
+//Including library for GPS 
+#include <TinyGPS++.h>
+
 //Including libraries to connect RTC by Wire and I2C
 #include <Wire.h>
-#include "RTClib.h"
+#include <RTClib.h>
 #include <SoftwareSerial.h>
 
 #include "classes/CommandProcessor.h"
@@ -26,9 +37,36 @@
 
 #define BAUD_RATE     9600
 
+//Defining pins for TFT Screen 
+#define TFT_CS     6
+#define TFT_RST    8 
+#define TFT_DC     7
+#define TFT_SCLK 5   
+#define TFT_MOSI 4 
+
+
+//Adafruit_ST7735 tft = Adafruit_ST7735(TFT_CS, TFT_DC, TFT_MOSI, TFT_SCLK, TFT_RST);
 SoftwareSerial btSerial(BLUETOOTH_RX, BLUETOOTH_TX);
 StateManager stateManager;
 FileProcessor fileProcessor;
+
+//Defining pins for DHT22
+#define DHTPIN 3     // what pin we're connected to
+#define DHTTYPE DHT22   // DHT 22  (AM2302)
+DHT dht(DHTPIN, DHTTYPE); //// Initialize DHT sensor for normal 
+
+//Defining pins for GPS
+SoftwareSerial serial_connection(11, 10); //RX=pin 10, TX=pin 11
+TinyGPSPlus gps;//This is the GPS object that will pretty much do all the grunt work with the NMEA data
+
+unsigned int samplingTime = 280; //Datasheet: Duration before measuring the ouput signal (after switching on LED): 280 µs 
+unsigned int deltaTime = 40; //Datasheet: Duration of the whole excitation pulse: 320 µs; Duration before switching off LED: 40 µs
+unsigned int sleepTime = 9680; //Datasheet: Pulse Cycle: 10ms; Remaining time: 10,000 - 320 = 9680 µs
+
+//Variables for DHT22
+int chk;
+float hum; 
+float temp;
 
 // Required for the file operations
 // long currentTime;
@@ -54,6 +92,11 @@ void setup() {
   pinMode(LED_POWER_PIN ,OUTPUT); //Configures the digital pin as an output (to set it at 0V and 5V per cycle; turning on and off the LED
   pinMode(10, OUTPUT); //Configures the pin of the SD card reader as an output
 
+  dht.begin();
+//  tft.initR(INITR_BLACKTAB);   // initialize a ST7735S chip, black tab
+//  tft.fillScreen(ST7735_BLACK);
+
+  serial_connection.begin(9600);//This opens up communications to the GPS
   /**
    * Tests show that it takes about 1.9ms to read a single line from a file
    * 2.4ms to do conversion of data
@@ -103,6 +146,23 @@ void loop() {
     }
   }
 
+  // Process GPS packets
+  {
+    while(serial_connection.available()) { //While there are characters to come from the GPS
+      gps.encode(serial_connection.read());//This feeds the serial NMEA data into the library one char at a time
+    }
+
+    // {
+    //   //Get the latest info from the gps object which it derived from the data sent by the GPS unit
+
+    //   // Serial.println("Satellite Count:");
+    //   // Serial.println(gps.satellites.value());
+    //   // Serial.println("Latitude:");
+    //   // Serial.println(gps.location.lat(), 6);
+    //   // Serial.println("Longitude:");
+    //   // Serial.println(gps.location.lng(), 6);
+    // }
+  }
   {
     long loopTime = stateManager.getTimeStamp();
     long currentTime = ROMVar::getCurrentTime();
@@ -126,7 +186,10 @@ void loop() {
 
       calcVoltage = voMeasured*(5.0/1024); //0-5V mapped to 0 - 1023 integer values for real voltage value
       dustDensity = 0.17*calcVoltage-0.1; //Datasheet: Calibration curve
-
+      //Read data and store it to variables hum and temp
+      hum = dht.readHumidity();
+      temp = dht.readTemperature();
+      
       // TODO: Not hardcode the microclimate and location
       fileProcessor.pushData(dustDensity, 1.35432101, 103.8765432, 0);
     }
@@ -157,6 +220,45 @@ void loop() {
    * 88 219 181 26
    */
 
+//  {
+//
+//    //Printing data onto TFT
+//    tft.setTextColor(ST7735_fWHITE);
+//    tft.setCursor(20,10);
+//    tft.setTextSize(2);
+//    tft.println("SENSAIR");
+//    tft.setTextSize(1);
+//
+//    tft.setCursor(0, 40);
+//    tft.drawLine(0, 30, tft.width()-1, 30, ST7735_WHITE); //draw line separator
+//    tft.setTextColor(ST7735_YELLOW);
+//    tft.print(" PM2.5 Conc :");
+//    tft.setCursor(80, 40);
+//    tft.setTextColor(ST7735_GREEN);
+////    tft.println((float)dustDensity);
+//
+//    tft.setCursor(0, 50);
+//    tft.setTextColor(ST7735_YELLOW);
+//    tft.print(" Humidity(%) :");
+//    tft.setCursor(80, 50);
+//    tft.setTextColor(ST7735_GREEN);
+//    tft.println((float)hum);
+//
+//    tft.setCursor(0, 60);
+//    tft.setTextColor(ST7735_YELLOW);
+//    tft.print(" Temp :");
+//    tft.setCursor(80, 60);
+//    tft.setTextColor(ST7735_GREEN);
+//    tft.println((float)temp);
+//
+//    tft.drawLine(0, 70, tft.width()-1, 70, ST7735_WHITE); //draw line separator
+//
+//    delay(60000);
+//
+//    tft.fillRect(80,40,40,18,ST7735_BLACK);
+//    tft.fillRect(80,50,40,18,ST7735_BLACK);
+//    tft.fillRect(80,60,40,18,ST7735_BLACK);
+//  }
 
   delay(50);
 }
