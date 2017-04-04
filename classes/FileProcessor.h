@@ -271,19 +271,19 @@ public:
       // -Serial.println(filename);
       // ROMVar::printFreeRam();
 
-      // Serial.write(C_F);
-      // Serial.write(C_LR);
+      Serial.write(C_F);
+      Serial.write(C_LR);
 
-      // Serial.print(countTimeIterator);
-      // Serial.write(C_SP);
-      // Serial.println(filename);
+      Serial.print(countTimeIterator);
+      Serial.write(C_SP);
+      Serial.println(filename);
 
       File currentFile = SD.open(filename, FILE_READ);
       bool matched = false;
       if ( currentFile ) {
         // -Serial.println("File read");
-        // Serial.write(C_R);
-        // Serial.write(C_LR);
+        Serial.write(C_R);
+        Serial.write(C_LR);
         while ( currentFile.available() ) {
           char r = '\0';
           int i = 0;
@@ -301,8 +301,8 @@ public:
             long timestamp = atol(temp);
             // Serial.println(timestamp);
             if ( timestamp >= countTimeIterator ) {
-              // Serial.write(C_M);
-              // Serial.write(C_LR);
+              Serial.write(C_M);
+              Serial.write(C_LR);
               matched = true;
               count++;
             }
@@ -346,9 +346,9 @@ public:
 
     while ( true ) {
       char * filename = FileProcessor::timestampToFilename(countReadingIterator);
-      // Serial.write(C_C);
-      // Serial.write(C_SP);
-      // Serial.println(filename);
+      Serial.write(C_C);
+      Serial.write(C_SP);
+      Serial.println(filename);
       if ( !SD.exists(filename) ) {
         break;
       }
@@ -392,9 +392,9 @@ public:
     char * filename = FileProcessor::timestampToFilename(readingIterator);
     if ( SD.exists(filename) ) {
       // -Serial.print("Sending packets from: ");
-      // Serial.write(C_S);
-      // Serial.write(C_SP);
-      // Serial.println(filename);
+      Serial.write(C_S);
+      Serial.write(C_SP);
+      Serial.println(filename);
 
       long startTime = millis();
       File currentFile = SD.open(filename, FILE_READ);
@@ -422,11 +422,11 @@ public:
         }
         Serial.println(packetsToSend);
         if ( packetsToSend == 0 ) {
-          // Serial.println("Done");
+          Serial.println("Done");
           readingIterator = 0;
         }
         if ( lines == 0 ) {
-          // Serial.print("No more packets ");
+          Serial.print("No more packets ");
           readingIterator = FileProcessor::getStartOfDay(readingIterator) + 86400;
           // -Serial.println(readingIterator);
         }

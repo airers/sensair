@@ -1,4 +1,4 @@
-//Including library for TFT Screen 
+//Including library for TFT Screen
 //#include <Adafruit_GFX.h>    // Core graphics library
 //#include <Adafruit_ST7735.h> // Hardware-specific library
 //#include <SPI.h>
@@ -6,7 +6,7 @@
 //Including library for DHT22 (Temp and RH sensor)
 #include <DHT.h>;
 
-//Including library for GPS 
+//Including library for GPS
 #include <TinyGPS++.h>
 
 //Including libraries to connect RTC by Wire and I2C
@@ -37,12 +37,12 @@
 
 #define BAUD_RATE     9600
 
-//Defining pins for TFT Screen 
+//Defining pins for TFT Screen
 #define TFT_CS     6
-#define TFT_RST    8 
+#define TFT_RST    8
 #define TFT_DC     7
-#define TFT_SCLK 5   
-#define TFT_MOSI 4 
+#define TFT_SCLK 5
+#define TFT_MOSI 4
 
 
 //Adafruit_ST7735 tft = Adafruit_ST7735(TFT_CS, TFT_DC, TFT_MOSI, TFT_SCLK, TFT_RST);
@@ -53,19 +53,19 @@ FileProcessor fileProcessor;
 //Defining pins for DHT22
 #define DHTPIN 3     // what pin we're connected to
 #define DHTTYPE DHT22   // DHT 22  (AM2302)
-DHT dht(DHTPIN, DHTTYPE); //// Initialize DHT sensor for normal 
+DHT dht(DHTPIN, DHTTYPE); //// Initialize DHT sensor for normal
 
 //Defining pins for GPS
-SoftwareSerial serial_connection(11, 10); //RX=pin 10, TX=pin 11
+SoftwareSerial gpsSerial(3, 2); //RX=pin 10, TX=pin 11
 TinyGPSPlus gps;//This is the GPS object that will pretty much do all the grunt work with the NMEA data
 
-unsigned int samplingTime = 280; //Datasheet: Duration before measuring the ouput signal (after switching on LED): 280 µs 
+unsigned int samplingTime = 280; //Datasheet: Duration before measuring the ouput signal (after switching on LED): 280 µs
 unsigned int deltaTime = 40; //Datasheet: Duration of the whole excitation pulse: 320 µs; Duration before switching off LED: 40 µs
 unsigned int sleepTime = 9680; //Datasheet: Pulse Cycle: 10ms; Remaining time: 10,000 - 320 = 9680 µs
 
 //Variables for DHT22
 int chk;
-float hum; 
+float hum;
 float temp;
 
 // Required for the file operations
@@ -81,7 +81,10 @@ long calculateNextMinute() {
 void setup() {
   Serial.begin(BAUD_RATE); //Setting the speed of communication in bits per second; Arduino default: 9600
   btSerial.begin(BAUD_RATE);
+  gpsSerial.begin(BAUD_RATE);//This opens up communications to the GPS
+
   Wire.begin();
+  dht.begin();
 
   stateManager.init();
   fileProcessor.init();
@@ -92,11 +95,10 @@ void setup() {
   pinMode(LED_POWER_PIN ,OUTPUT); //Configures the digital pin as an output (to set it at 0V and 5V per cycle; turning on and off the LED
   pinMode(10, OUTPUT); //Configures the pin of the SD card reader as an output
 
-  dht.begin();
+
 //  tft.initR(INITR_BLACKTAB);   // initialize a ST7735S chip, black tab
 //  tft.fillScreen(ST7735_BLACK);
 
-  serial_connection.begin(9600);//This opens up communications to the GPS
   /**
    * Tests show that it takes about 1.9ms to read a single line from a file
    * 2.4ms to do conversion of data
@@ -130,6 +132,7 @@ void loop() {
   {
     byte type = 0;
     uint8_t len = 0;
+    btSerial.listen();
     while ( btSerial.available() ) {
       type = btSerial.read();
       if ( btSerial.available() ) {
@@ -142,15 +145,17 @@ void loop() {
         i++;
       }
 
+      Serial.println(len);
       CommandProcessor::processPacket(type, len, data, btSerial, stateManager, fileProcessor);
     }
   }
 
   // Process GPS packets
   {
-    while(serial_connection.available()) { //While there are characters to come from the GPS
-      gps.encode(serial_connection.read());//This feeds the serial NMEA data into the library one char at a time
-    }
+    // gpsSerial.listen();
+    // while(gpsSerial.available()) { //While there are characters to come from the GPS
+    //   gps.encode(gpsSerial.read());//This feeds the serial NMEA data into the library one char at a time
+    // }
 
     // {
     //   //Get the latest info from the gps object which it derived from the data sent by the GPS unit
@@ -189,7 +194,7 @@ void loop() {
       //Read data and store it to variables hum and temp
       hum = dht.readHumidity();
       temp = dht.readTemperature();
-      
+
       // TODO: Not hardcode the microclimate and location
       fileProcessor.pushData(dustDensity, 1.35432101, 103.8765432, 0);
     }
