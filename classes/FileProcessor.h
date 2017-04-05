@@ -144,9 +144,7 @@ public:
     ROMVar::setAverageVars(zero,zero,zero,zero);
     readingCount = 0;
 
-    if ( firstReading == 0 ) {
-      setFirstReading(firstReading);
-    }
+
 
     if ( currentDayFile ) {
       DateTime now(minuteTime);
@@ -173,6 +171,10 @@ public:
       currentDayFile.print(accuracy,2);
       currentDayFile.write("\n");
       currentDayFile.close();
+      if ( firstReading == 0 ) {
+        setFirstReading(minuteTime);
+      }
+      ROMVar::setLatestReading(minuteTime);
     }
   }
 
