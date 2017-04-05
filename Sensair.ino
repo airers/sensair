@@ -51,7 +51,7 @@ StateManager stateManager;
 FileProcessor fileProcessor;
 
 //Defining pins for DHT22
-#define DHTPIN 3     // what pin we're connected to
+#define DHTPIN 2     // what pin we're connected to
 #define DHTTYPE DHT22   // DHT 22  (AM2302)
 DHT dht(DHTPIN, DHTTYPE); //// Initialize DHT sensor for normal
 
@@ -192,8 +192,9 @@ void loop() {
       calcVoltage = voMeasured*(5.0/1024); //0-5V mapped to 0 - 1023 integer values for real voltage value
       dustDensity = 0.17*calcVoltage-0.1; //Datasheet: Calibration curve
       //Read data and store it to variables hum and temp
-      hum = dht.readHumidity();
-      temp = dht.readTemperature();
+      hum = dht.readHumidity(); // Relative Humidity in %
+      temp = dht.readTemperature(); // Temperature in deg C
+
 
       // TODO: Not hardcode the microclimate and location
       fileProcessor.pushData(dustDensity, 1.35432101, 103.8765432, 0);
