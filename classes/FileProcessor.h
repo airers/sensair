@@ -342,6 +342,7 @@ public:
 
   uint16_t countPackets2(long from) {
     uint16_t count = 0;
+    long latestReading = ROMVar::getLatestReading();
     long countReadingIterator = from;
     char * buffer = (char*)malloc(90);
     char * temp = (char*)malloc(15);
@@ -352,7 +353,12 @@ public:
       Serial.write(C_SP);
       Serial.println(filename);
       if ( !SD.exists(filename) ) {
-        break;
+        countReadingIterator = FileProcessor::getStartOfDay(countReadingIterator) + 86400;
+        if ( countReadingIterator <= latestReading ) {
+          continue;
+        } else {
+          break;
+        }
       }
       // long startTime = millis();
       File currentFile = SD.open(filename, FILE_READ);
@@ -380,7 +386,7 @@ public:
       }
     }
 
-    free (temp);
+    free(temp);
     free(buffer);
     return count;
   }
@@ -391,59 +397,64 @@ public:
       return;
     }
 
+    long latestReading = ROMVar::getLatestReading();
     char * filename = FileProcessor::timestampToFilename(readingIterator);
-    if ( SD.exists(filename) ) {
-      // -Serial.print("Sending packets from: ");
-      Serial.write(C_S);
-      Serial.write(C_SP);
-      Serial.println(filename);
-
-      long startTime = millis();
-      File currentFile = SD.open(filename, FILE_READ);
-      char * buffer = (char*)malloc(90);
-      if ( currentFile ) {
-        int lines = 0;
-        while ( currentFile.available() ) {
-          char r = '\0';
-          int i = 0;
-          while ( r != '\n' ) {
-            if ( !currentFile.available() ) break;
-            r = currentFile.read();
-            buffer[i] = r;
-            i++;
-          }
-          buffer[i] = '\0';
-          // Process a line
-          if ( processLine(buffer, btSerial) ) {
-            lines++;
-            packetsToSend--;
-            if ( packetsToSend == 0 || lines >= 5 ) {
-              break;
-            }
-          };
-        }
-        Serial.println(packetsToSend);
-        if ( packetsToSend == 0 ) {
-          Serial.println("Done");
-          readingIterator = 0;
-        }
-        if ( lines == 0 ) {
-          Serial.print("No more packets ");
-          readingIterator = FileProcessor::getStartOfDay(readingIterator) + 86400;
-          // -Serial.println(readingIterator);
-        }
-        currentFile.close();
-        // free(&currentFile);
-        free(buffer);
+    if ( !SD.exists(filename) ) {
+      readingIterator = FileProcessor::getStartOfDay(readingIterator) + 86400;
+      if ( readingIterator <= latestReading ) {
+      } else {
+        readingIterator = 0;
       }
+      return;
+    }
+
+    // -Serial.print("Sending packets from: ");
+    Serial.write(C_S);
+    Serial.write(C_SP);
+    Serial.println(filename);
+
+    long startTime = millis();
+    File currentFile = SD.open(filename, FILE_READ);
+    char * buffer = (char*)malloc(90);
+    if ( currentFile ) {
+      int lines = 0;
+      while ( currentFile.available() ) {
+        char r = '\0';
+        int i = 0;
+        while ( r != '\n' ) {
+          if ( !currentFile.available() ) break;
+          r = currentFile.read();
+          buffer[i] = r;
+          i++;
+        }
+        buffer[i] = '\0';
+        // Process a line
+        if ( processLine(buffer, btSerial) ) {
+          lines++;
+          packetsToSend--;
+          if ( packetsToSend == 0 || lines >= 5 ) {
+            break;
+          }
+        };
+      }
+      Serial.println(packetsToSend);
+      if ( packetsToSend == 0 ) {
+        Serial.println("Done");
+        readingIterator = 0;
+      }
+      if ( lines == 0 ) {
+        Serial.print("EOF");
+        readingIterator = FileProcessor::getStartOfDay(readingIterator) + 86400;
+        // -Serial.println(readingIterator);
+      }
+      currentFile.close();
+      // free(&currentFile);
+      free(buffer);
+
       // long duration = millis() - startTime;
       // // -Serial.print("Duration: ");
       // // -Serial.println(duration);
 
-    } else {
-      // -Serial.print(filename);
-      // -Serial.println(" does not exist.");
-      readingIterator = 0;
     }
   }
 
