@@ -12,6 +12,8 @@
 
 //Defining the pin for the SD Card reader
 #define SD_PIN 10
+#define SECONDS_IN_DAY 86400
+#define SECONDS_IN_HOUR 3600
 
 class FileProcessor {
 private:
@@ -37,7 +39,7 @@ public:
     long seconds = dateTime.second();
     long minutes = dateTime.minute();
     long hours = dateTime.hour();
-    return timestamp - (seconds) - (minutes * 60) - (hours * 3600);
+    return timestamp - (seconds) - (minutes * 60) - (hours * SECONDS_IN_HOUR);
   }
 
   static char* timestampToFilename(long timestamp) {
@@ -122,10 +124,6 @@ public:
     if ( !cardAvailable ) return;
     char * filename = FileProcessor::timestampToFilename(timestamp);
     currentDayFile = SD.open(filename, FILE_WRITE);
-    if ( currentDayFile ) {
-      // -Serial.print("Storing data in ");
-      // -Serial.println(filename);
-    }
   }
 
   void storeAverageData(long minuteTime, uint8_t microclimate) {
@@ -143,10 +141,6 @@ public:
     ROMVar::setAccuracyVars(zero,zero,zero,zero);
     ROMVar::setAverageVars(zero,zero,zero,zero);
     readingCount = 0;
-
-    if ( firstReading == 0 ) {
-      setFirstReading(firstReading);
-    }
 
     if ( currentDayFile ) {
       DateTime now(minuteTime);
@@ -173,9 +167,12 @@ public:
       currentDayFile.print(accuracy,2);
       currentDayFile.write("\n");
       currentDayFile.close();
+      if ( firstReading == 0 ) {
+        setFirstReading(minuteTime);
+      }
+      ROMVar::setLatestReading(minuteTime);
     }
   }
-
 
 
   // ============= Reading and sending file ==================
@@ -199,6 +196,71 @@ public:
     if ( start == end ) return;
     memcpy(output, input + start, end - start); // Do actual copying
     output[end - start] = '\0'; // Null terminate the string
+  }
+
+
+
+/**
+ * Counts the packets from a given timetamp to the latest timestamp
+ * @method countPackets2
+ * @param  from          start timestamp
+ * @return               [description]
+ */
+  uint16_t countPackets2(long from) {
+    uint16_t count = 0;
+    long latestReading = ROMVar::getLatestReading();
+    long countReadingIterator = from;
+    char * buffer = (char*)malloc(90);
+    char * temp = (char*)malloc(15);
+
+    while ( true ) {
+      char * filename = FileProcessor::timestampToFilename(countReadingIterator);
+      Serial.write(C_C);
+      Serial.write(C_SP);
+      Serial.println(filename);
+      if ( !SD.exists(filename) ) {
+        countReadingIterator = FileProcessor::getStartOfDay(countReadingIterator) + SECONDS_IN_DAY;
+        if ( countReadingIterator <= latestReading ) {
+          continue;
+        } else {
+          break;
+        }
+      }
+      // long startTime = millis();
+      File currentFile = SD.open(filename, FILE_READ);
+      if ( currentFile ) {
+        while ( currentFile.available() ) {
+          char r = '\0';
+          int i = 0;
+          while ( r != '\n' ) {
+            if ( !currentFile.available() ) break;
+            r = currentFile.read();
+            buffer[i] = r;
+            i++;
+          }
+          buffer[i] = '\0';
+          // Process a line
+          getSplitSection(temp, buffer, 1);
+          long timestamp = atol(temp);
+
+          if ( timestamp >= countReadingIterator) {
+            count++;
+          }
+        }
+        currentFile.close();
+        countReadingIterator = FileProcessor::getStartOfDay(countReadingIterator) + SECONDS_IN_DAY;
+      }
+    }
+
+    free(temp);
+    free(buffer);
+    return count;
+  }
+
+
+  void startSendingData(long from, uint16_t count) {
+    readingIterator = from;
+    packetsToSend = count;
   }
 
   bool processLine(char * buffer, SoftwareSerial &btSerial) {
@@ -254,197 +316,153 @@ public:
     }
   }
 
-  uint16_t countPackets(long from) {
-    // // -Serial.print("Start counting ");
-    // ROMVar::printFreeRam();
-    // -Serial.println("Counting packets:");
-    uint16_t count = 0;
-    long startTime = millis();
-    long countTimeIterator = from;
-    char * filename = FileProcessor::timestampToFilename(countTimeIterator);
-    char * buffer = (char*)malloc(100);
-    char * temp = (char*)malloc(15);
-    while (SD.exists(filename)) {
-      // -Serial.print("Reading file:");
-      // -Serial.print(countTimeIterator);
-      // -Serial.print(" ");
-      // -Serial.println(filename);
-      // ROMVar::printFreeRam();
-
-      Serial.write(C_F);
-      Serial.write(C_LR);
-
-      Serial.print(countTimeIterator);
-      Serial.write(C_SP);
-      Serial.println(filename);
-
-      File currentFile = SD.open(filename, FILE_READ);
-      bool matched = false;
-      if ( currentFile ) {
-        // -Serial.println("File read");
-        Serial.write(C_R);
-        Serial.write(C_LR);
-        while ( currentFile.available() ) {
-          char r = '\0';
-          int i = 0;
-          while ( r != '\n' ) {
-            if ( !currentFile.available() ) break;
-            r = currentFile.read();
-            buffer[i] = r;
-            i++;
-          }
-          buffer[i] = '\0';
-          if (matched) {
-            count++;
-          } else {
-            getSplitSection(temp, buffer, 1);
-            long timestamp = atol(temp);
-            // Serial.println(timestamp);
-            if ( timestamp >= countTimeIterator ) {
-              Serial.write(C_M);
-              Serial.write(C_LR);
-              matched = true;
-              count++;
-            }
-
-          }
-        }
-        currentFile.close();
-        // free(&currentFile);
-      } else {
-        break;
-      }
-
-      // // -Serial.print("End counting");
-
-      countTimeIterator = FileProcessor::getStartOfDay(countTimeIterator) + 86400;
-      filename = FileProcessor::timestampToFilename(countTimeIterator);
-    } // end while (SD.exists(filename));
-
-    free(temp);
-    free(buffer);
-    free(filename);
-    // long duration = millis() - startTime;
-    // -Serial.print("Duration: ");
-    // -Serial.println(duration);
-
-    // ROMVar::printFreeRam();
-
-    return count;
-  }
-
-  void startSendingData(long from, uint16_t count) {
-    readingIterator = from;
-    packetsToSend = count;
-  }
-
-  uint16_t countPackets2(long from) {
-    uint16_t count = 0;
-    long countReadingIterator = from;
-    char * buffer = (char*)malloc(90);
-    char * temp = (char*)malloc(15);
-
-    while ( true ) {
-      char * filename = FileProcessor::timestampToFilename(countReadingIterator);
-      Serial.write(C_C);
-      Serial.write(C_SP);
-      Serial.println(filename);
-      if ( !SD.exists(filename) ) {
-        break;
-      }
-      // long startTime = millis();
-      File currentFile = SD.open(filename, FILE_READ);
-      if ( currentFile ) {
-        while ( currentFile.available() ) {
-          char r = '\0';
-          int i = 0;
-          while ( r != '\n' ) {
-            if ( !currentFile.available() ) break;
-            r = currentFile.read();
-            buffer[i] = r;
-            i++;
-          }
-          buffer[i] = '\0';
-          // Process a line
-          getSplitSection(temp, buffer, 1);
-          long timestamp = atol(temp);
-
-          if ( timestamp >= countReadingIterator) {
-            count++;
-          }
-        }
-        currentFile.close();
-        countReadingIterator = FileProcessor::getStartOfDay(countReadingIterator) + 86400;
-      }
-    }
-
-    free (temp);
-    free(buffer);
-    return count;
-  }
-
 
   void sendSomePackets(SoftwareSerial &btSerial) {
     if ( readingIterator == 0 || packetsToSend == 0 ) {
       return;
     }
 
+    long latestReading = ROMVar::getLatestReading();
     char * filename = FileProcessor::timestampToFilename(readingIterator);
-    if ( SD.exists(filename) ) {
-      // -Serial.print("Sending packets from: ");
-      Serial.write(C_S);
-      Serial.write(C_SP);
-      Serial.println(filename);
-
-      long startTime = millis();
-      File currentFile = SD.open(filename, FILE_READ);
-      char * buffer = (char*)malloc(90);
-      if ( currentFile ) {
-        int lines = 0;
-        while ( currentFile.available() ) {
-          char r = '\0';
-          int i = 0;
-          while ( r != '\n' ) {
-            if ( !currentFile.available() ) break;
-            r = currentFile.read();
-            buffer[i] = r;
-            i++;
-          }
-          buffer[i] = '\0';
-          // Process a line
-          if ( processLine(buffer, btSerial) ) {
-            lines++;
-            packetsToSend--;
-            if ( packetsToSend == 0 || lines >= 5 ) {
-              break;
-            }
-          };
-        }
-        Serial.println(packetsToSend);
-        if ( packetsToSend == 0 ) {
-          Serial.println("Done");
-          readingIterator = 0;
-        }
-        if ( lines == 0 ) {
-          Serial.print("No more packets ");
-          readingIterator = FileProcessor::getStartOfDay(readingIterator) + 86400;
-          // -Serial.println(readingIterator);
-        }
-        currentFile.close();
-        // free(&currentFile);
-        free(buffer);
+    if ( !SD.exists(filename) ) {
+      readingIterator = FileProcessor::getStartOfDay(readingIterator) + SECONDS_IN_DAY;
+      if ( readingIterator <= latestReading ) {
+      } else {
+        readingIterator = 0;
       }
+      return;
+    }
+
+    // -Serial.print("Sending packets from: ");
+    Serial.write(C_S);
+    Serial.write(C_SP);
+    Serial.println(filename);
+
+    long startTime = millis();
+    File currentFile = SD.open(filename, FILE_READ);
+    char * buffer = (char*)malloc(90);
+    if ( currentFile ) {
+      int lines = 0;
+      while ( currentFile.available() ) {
+        char r = '\0';
+        int i = 0;
+        while ( r != '\n' ) {
+          if ( !currentFile.available() ) break;
+          r = currentFile.read();
+          buffer[i] = r;
+          i++;
+        }
+        buffer[i] = '\0';
+        // Process a line
+        if ( processLine(buffer, btSerial) ) {
+          lines++;
+          packetsToSend--;
+          if ( packetsToSend == 0 || lines >= 5 ) {
+            break;
+          }
+        };
+      }
+      Serial.println(packetsToSend);
+      if ( packetsToSend == 0 ) {
+        Serial.println("Done");
+        readingIterator = 0;
+      }
+      if ( lines == 0 ) {
+        Serial.println("EOF");
+        readingIterator = FileProcessor::getStartOfDay(readingIterator) + SECONDS_IN_DAY;
+        // -Serial.println(readingIterator);
+      }
+      currentFile.close();
+      // free(&currentFile);
+      free(buffer);
+
       // long duration = millis() - startTime;
       // // -Serial.print("Duration: ");
       // // -Serial.println(duration);
 
-    } else {
-      // -Serial.print(filename);
-      // -Serial.println(" does not exist.");
-      readingIterator = 0;
     }
   }
 
+
+
+  // uint16_t countPackets(long from) {
+  //   // // -Serial.print("Start counting ");
+  //   // ROMVar::printFreeRam();
+  //   // -Serial.println("Counting packets:");
+  //   uint16_t count = 0;
+  //   long startTime = millis();
+  //   long countTimeIterator = from;
+  //   char * filename = FileProcessor::timestampToFilename(countTimeIterator);
+  //   char * buffer = (char*)malloc(100);
+  //   char * temp = (char*)malloc(15);
+  //   while (SD.exists(filename)) {
+  //     // -Serial.print("Reading file:");
+  //     // -Serial.print(countTimeIterator);
+  //     // -Serial.print(" ");
+  //     // -Serial.println(filename);
+  //     // ROMVar::printFreeRam();
+  //
+  //     Serial.write(C_F);
+  //     Serial.write(C_LR);
+  //
+  //     Serial.print(countTimeIterator);
+  //     Serial.write(C_SP);
+  //     Serial.println(filename);
+  //
+  //     File currentFile = SD.open(filename, FILE_READ);
+  //     bool matched = false;
+  //     if ( currentFile ) {
+  //       // -Serial.println("File read");
+  //       Serial.write(C_R);
+  //       Serial.write(C_LR);
+  //       while ( currentFile.available() ) {
+  //         char r = '\0';
+  //         int i = 0;
+  //         while ( r != '\n' ) {
+  //           if ( !currentFile.available() ) break;
+  //           r = currentFile.read();
+  //           buffer[i] = r;
+  //           i++;
+  //         }
+  //         buffer[i] = '\0';
+  //         if (matched) {
+  //           count++;
+  //         } else {
+  //           getSplitSection(temp, buffer, 1);
+  //           long timestamp = atol(temp);
+  //           // Serial.println(timestamp);
+  //           if ( timestamp >= countTimeIterator ) {
+  //             Serial.write(C_M);
+  //             Serial.write(C_LR);
+  //             matched = true;
+  //             count++;
+  //           }
+  //
+  //         }
+  //       }
+  //       currentFile.close();
+  //       // free(&currentFile);
+  //     } else {
+  //       break;
+  //     }
+  //
+  //     // // -Serial.print("End counting");
+  //
+  //     countTimeIterator = FileProcessor::getStartOfDay(countTimeIterator) + SECONDS_IN_DAY;
+  //     filename = FileProcessor::timestampToFilename(countTimeIterator);
+  //   } // end while (SD.exists(filename));
+  //
+  //   free(temp);
+  //   free(buffer);
+  //   free(filename);
+  //   // long duration = millis() - startTime;
+  //   // -Serial.print("Duration: ");
+  //   // -Serial.println(duration);
+  //
+  //   // ROMVar::printFreeRam();
+  //
+  //   return count;
+  // }
 };
 
 
