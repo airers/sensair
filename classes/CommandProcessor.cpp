@@ -73,7 +73,7 @@ void CommandProcessor::processPacket(byte type,
           Serial.write(C_LR);
           Serial.print(timestamp.data);
           // -Serial.println(" ");
-          readingCount.data = fileProcessor.countPackets2(timestamp.data);
+          readingCount.data = fileProcessor.countPackets(timestamp.data);
           btSerial.write(CMD_READING_COUNT);
           packet_len = 2;
           btSerial.write(packet_len);

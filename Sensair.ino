@@ -108,16 +108,17 @@ void setup() {
    * This will result in reading loses of 2 seconds.
    * This is not a problem, just something to take note.
    */
-  // uint16_t count = fileProcessor.countPackets2(1490830040);
+  // uint16_t count = fileProcessor.countPackets(0);
   // Serial.println(count);
-  // count = fileProcessor.countPackets2(1490830040);
+  // count = fileProcessor.countPackets(1490830040);
   // Serial.println(count);
-  // count = fileProcessor.countPackets2(1490830040);
+  // count = fileProcessor.countPackets(1490830040);
   // Serial.println(count);
-  // count = fileProcessor.countPackets2(1490830040);
+  // count = fileProcessor.countPackets(1490830040);
   // Serial.println(count);
   // fileProcessor.startSendingData(1490830040, 100);
   Serial.println(fileProcessor.getFirstReading());
+  Serial.println(ROMVar::getLatestReading());
   Serial.write(C_S);
   Serial.write(C_T);
   Serial.write(C_A);
