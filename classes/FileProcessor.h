@@ -368,7 +368,7 @@ public:
         readingIterator = 0;
       }
       if ( lines == 0 ) {
-        Serial.print("EOF");
+        Serial.println("EOF");
         readingIterator = FileProcessor::getStartOfDay(readingIterator) + SECONDS_IN_DAY;
         // -Serial.println(readingIterator);
       }
