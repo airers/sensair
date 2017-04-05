@@ -176,6 +176,7 @@ void loop() {
 
     if ( loopTime > currentTime ) {
       currentTime = loopTime;
+      ROMVar::setCurrentTime(currentTime);
 
       float voMeasured = 0;
       float calcVoltage = 0;
@@ -199,18 +200,19 @@ void loop() {
 
       // TODO: Not hardcode the microclimate and location
       fileProcessor.pushData(dustDensity, 1.35432101, 103.8765432, 0);
-    }
-    if ( currentTime >= nextMinuteTime ) {
-      long prevMinuteTime = nextMinuteTime - 60;
 
-      // Average past minute readings & save as previous minute
-      fileProcessor.openAppropiateFile(prevMinuteTime);
-      fileProcessor.storeAverageData(prevMinuteTime, stateManager.microclimate);
-      nextMinuteTime = calculateNextMinute();
+
+      if ( currentTime >= nextMinuteTime ) {
+        long prevMinuteTime = nextMinuteTime - 60;
+
+        // Average past minute readings & save as previous minute
+        fileProcessor.openAppropiateFile(prevMinuteTime);
+        fileProcessor.storeAverageData(prevMinuteTime, stateManager.microclimate);
+        nextMinuteTime = calculateNextMinute();
+        ROMVar::setNextMinuteTime(nextMinuteTime);
+      }
     }
 
-    ROMVar::setCurrentTime(currentTime);
-    ROMVar::setNextMinuteTime(nextMinuteTime);
   }
 
   // Send packets if there's something requesting it

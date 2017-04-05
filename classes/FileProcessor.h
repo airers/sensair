@@ -152,6 +152,7 @@ public:
     }
 
     if ( currentDayFile ) {
+      // Serial.println("Avg");
       DateTime now(minuteTime);
       currentDayFile.print(now.hour(), DEC);
       currentDayFile.print(":");
@@ -176,6 +177,7 @@ public:
       currentDayFile.print(accuracy,2);
       currentDayFile.write("\n");
       currentDayFile.close();
+
       ROMVar::setLatestReading(minuteTime);
 
     }
