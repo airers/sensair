@@ -10,17 +10,19 @@
 
 // Required (stores first reading so device knows where to look for code)
 #define FIRST_READING     0   // long (4 bytes)
+#define LATEST_READING    4   // long (4 bytes)
+
 // Volatile (does not need to be saved)
-#define CURRENT_TIME      4   // long (4 bytes)
-#define NEXT_MINUTE_TIME  8   // long (4 bytes)
-#define READING_TOTAL     12  // float (4 bytes)
-#define LAT_TOTAL         16  // float (4 bytes)
-#define LON_TOTAL         20  // float (4 bytes)
-#define ELE_TOTAL         24  // float (4 bytes)
-#define LAT_MAX           28  // float (4 bytes)
-#define LAT_MIN           32  // float (4 bytes)
-#define LON_MAX           36  // float (4 bytes)
-#define LON_MIN           40  // float (4 bytes)
+#define CURRENT_TIME      12  // long (4 bytes)
+#define NEXT_MINUTE_TIME  16  // long (4 bytes)
+#define READING_TOTAL     20  // float (4 bytes)
+#define LAT_TOTAL         24  // float (4 bytes)
+#define LON_TOTAL         28  // float (4 bytes)
+#define ELE_TOTAL         32  // float (4 bytes)
+#define LAT_MAX           36  // float (4 bytes)
+#define LAT_MIN           40  // float (4 bytes)
+#define LON_MAX           44  // float (4 bytes)
+#define LON_MIN           48  // float (4 bytes)
 
 class ROMVar {
 private:
@@ -70,7 +72,15 @@ public:
   static long getFirstReading() {
     return getLong(FIRST_READING);
   }
-  
+
+  static void setLatestReading(long time) {
+    setLong(LATEST_READING, time);
+  }
+
+  static long getLatestReading() {
+    return getLong(LATEST_READING);
+  }
+
   static void setCurrentTime(long time) {
     setLong(CURRENT_TIME, time);
   }
