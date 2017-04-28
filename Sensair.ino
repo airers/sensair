@@ -3,22 +3,22 @@
 //#include <Adafruit_ST7735.h> // Hardware-specific library
 //#include <SPI.h>
 
-//Including library for DHT22 (Temp and RH sensor)
-#include <DHT.h>;
+// Including library for DHT22 (Temp and RH sensor)
+// #include <DHT.h>;
 
 //Including library for GPS
-#include <TinyGPS++.h>
+// #include <TinyGPS++.h>
 
 //Including libraries to connect RTC by Wire and I2C
-#include <Wire.h>
-#include <RTClib.h>
-#include <SoftwareSerial.h>
-
-#include "classes/CommandProcessor.h"
-#include "classes/CommandProcessor.cpp"
-#include "classes/StateManager.h"
-#include "classes/FileProcessor.h"
-#include "classes/EEPROMVariables.h"
+// #include <Wire.h>
+// #include <RTClib.h>
+// #include <SoftwareSerial.h>
+//
+// #include "classes/CommandProcessor.h"
+// #include "classes/CommandProcessor.cpp"
+// #include "classes/StateManager.h"
+// #include "classes/FileProcessor.h"
+// #include "classes/EEPROMVariables.h"
 
 
 //Defining pins for Sharp sensor
@@ -44,56 +44,66 @@
 #define TFT_SCLK 5
 #define TFT_MOSI 4
 
+// LED pins
+#define POWER_LED 6
+#define WORKING_LED 7
+
 
 //Adafruit_ST7735 tft = Adafruit_ST7735(TFT_CS, TFT_DC, TFT_MOSI, TFT_SCLK, TFT_RST);
-SoftwareSerial btSerial(BLUETOOTH_RX, BLUETOOTH_TX);
-StateManager stateManager;
-FileProcessor fileProcessor;
+// SoftwareSerial btSerial(BLUETOOTH_RX, BLUETOOTH_TX);
+// StateManager stateManager;
+// FileProcessor fileProcessor;
 
 //Defining pins for DHT22
-#define DHTPIN 2     // what pin we're connected to
-#define DHTTYPE DHT22   // DHT 22  (AM2302)
-DHT dht(DHTPIN, DHTTYPE); //// Initialize DHT sensor for normal
+// #define DHTPIN 2     // what pin we're connected to
+// #define DHTTYPE DHT22   // DHT 22  (AM2302)
+// DHT dht(DHTPIN, DHTTYPE); //// Initialize DHT sensor for normal
 
 //Defining pins for GPS
-SoftwareSerial gpsSerial(3, 2); //RX=pin 10, TX=pin 11
-TinyGPSPlus gps;//This is the GPS object that will pretty much do all the grunt work with the NMEA data
+// SoftwareSerial gpsSerial(3, 2); //RX=pin 10, TX=pin 11
+// TinyGPSPlus gps;//This is the GPS object that will pretty much do all the grunt work with the NMEA data
 
-unsigned int samplingTime = 280; //Datasheet: Duration before measuring the ouput signal (after switching on LED): 280 µs
-unsigned int deltaTime = 40; //Datasheet: Duration of the whole excitation pulse: 320 µs; Duration before switching off LED: 40 µs
-unsigned int sleepTime = 9680; //Datasheet: Pulse Cycle: 10ms; Remaining time: 10,000 - 320 = 9680 µs
+// unsigned int samplingTime = 280; //Datasheet: Duration before measuring the ouput signal (after switching on LED): 280 µs
+// unsigned int deltaTime = 40; //Datasheet: Duration of the whole excitation pulse: 320 µs; Duration before switching off LED: 40 µs
+// unsigned int sleepTime = 9680; //Datasheet: Pulse Cycle: 10ms; Remaining time: 10,000 - 320 = 9680 µs
 
 //Variables for DHT22
-int chk;
-float hum;
-float temp;
+// int chk;
+// float hum;
+// float temp;
 
 // Required for the file operations
 // long currentTime;
 // long nextMinuteTime;
 
-long calculateNextMinute() {
-  DateTime currentDateTime(ROMVar::getCurrentTime());
-  return currentDateTime.unixtime() + (60 - currentDateTime.second());
-}
+// long calculateNextMinute() {
+//   DateTime currentDateTime(ROMVar::getCurrentTime());
+//   return currentDateTime.unixtime() + (60 - currentDateTime.second());
+// }
 
 
 void setup() {
-  Serial.begin(BAUD_RATE); //Setting the speed of communication in bits per second; Arduino default: 9600
-  btSerial.begin(BAUD_RATE);
-  gpsSerial.begin(BAUD_RATE);//This opens up communications to the GPS
+  pinMode(POWER_LED, OUTPUT);
+  digitalWrite(POWER_LED, LOW);
 
-  Wire.begin();
-  dht.begin();
+  pinMode(WORKING_LED, OUTPUT);
+  digitalWrite(WORKING_LED, HIGH);
 
-  stateManager.init();
-  fileProcessor.init();
-
-  ROMVar::setCurrentTime(stateManager.getTimeStamp());
-  ROMVar::setNextMinuteTime(calculateNextMinute());
-
-  pinMode(LED_POWER_PIN ,OUTPUT); //Configures the digital pin as an output (to set it at 0V and 5V per cycle; turning on and off the LED
-  pinMode(10, OUTPUT); //Configures the pin of the SD card reader as an output
+  // Serial.begin(BAUD_RATE); //Setting the speed of communication in bits per second; Arduino default: 9600
+  // btSerial.begin(BAUD_RATE);
+  // gpsSerial.begin(BAUD_RATE);//This opens up communications to the GPS
+  //
+  // Wire.begin();
+  // dht.begin();
+  //
+  // stateManager.init();
+  // fileProcessor.init();
+  //
+  // ROMVar::setCurrentTime(stateManager.getTimeStamp());
+  // ROMVar::setNextMinuteTime(calculateNextMinute());
+  //
+  // pinMode(LED_POWER_PIN ,OUTPUT); //Configures the digital pin as an output (to set it at 0V and 5V per cycle; turning on and off the LED
+  // pinMode(10, OUTPUT); //Configures the pin of the SD card reader as an output
 
 
 //  tft.initR(INITR_BLACKTAB);   // initialize a ST7735S chip, black tab
@@ -117,38 +127,50 @@ void setup() {
   // count = fileProcessor.countPackets2(1490830040);
   // Serial.println(count);
   // fileProcessor.startSendingData(1490830040, 100);
-  Serial.println(fileProcessor.getFirstReading());
-  Serial.write(C_S);
-  Serial.write(C_T);
-  Serial.write(C_A);
-  Serial.write(C_R);
-  Serial.write(C_T);
-  Serial.write(C_LR);
+  // Serial.println(fileProcessor.getFirstReading());
+  Serial.write("Start");
+
+  // Triple blink to indicate ready
+  digitalWrite(WORKING_LED, LOW);
+  delay(75);
+  digitalWrite(WORKING_LED, HIGH);
+  delay(50);
+  digitalWrite(WORKING_LED, LOW);
+  delay(75);
+  digitalWrite(WORKING_LED, HIGH);
+  delay(50);
+  digitalWrite(WORKING_LED, LOW);
+  delay(75);
+  digitalWrite(WORKING_LED, HIGH);
+  delay(50);
+  digitalWrite(WORKING_LED, LOW);
+  digitalWrite(POWER_LED, HIGH);
+
 }
 
 
 void loop() {
   // Process the incoming bluetooth packets
-  {
-    byte type = 0;
-    uint8_t len = 0;
-    btSerial.listen();
-    while ( btSerial.available() ) {
-      type = btSerial.read();
-      if ( btSerial.available() ) {
-        len = btSerial.read();
-      }
-      byte data [len];
-      int i = 0;
-      while ( i < len && btSerial.available() ) {
-        data[i] = btSerial.read();
-        i++;
-      }
-
-      Serial.println(len);
-      CommandProcessor::processPacket(type, len, data, btSerial, stateManager, fileProcessor);
-    }
-  }
+  // {
+  //   byte type = 0;
+  //   uint8_t len = 0;
+  //   btSerial.listen();
+  //   while ( btSerial.available() ) {
+  //     type = btSerial.read();
+  //     if ( btSerial.available() ) {
+  //       len = btSerial.read();
+  //     }
+  //     byte data [len];
+  //     int i = 0;
+  //     while ( i < len && btSerial.available() ) {
+  //       data[i] = btSerial.read();
+  //       i++;
+  //     }
+  //
+  //     Serial.println(len);
+  //     CommandProcessor::processPacket(type, len, data, btSerial, stateManager, fileProcessor);
+  //   }
+  // }
 
   // Process GPS packets
   {
@@ -169,52 +191,52 @@ void loop() {
     // }
   }
   {
-    long loopTime = stateManager.getTimeStamp();
-    long currentTime = ROMVar::getCurrentTime();
-    long nextMinuteTime = ROMVar::getNextMinuteTime();
-
-    if ( loopTime > currentTime ) {
-      currentTime = loopTime;
-      ROMVar::setCurrentTime(currentTime);
-
-      float voMeasured = 0;
-      float calcVoltage = 0;
-      float dustDensity = 0;
-
-      digitalWrite(LED_POWER_PIN ,LOW); //Turning on the LED; sinking current (i.e. light the LED connected through a series reistor to 5V)
-      delayMicroseconds(SAMPLING_TIME); //Duration of sampling
-
-      voMeasured = analogRead(MEASURE_PIN); //Reading the voltage measured
-
-      delayMicroseconds(DELTA_TIME); //Completing excitation pulse
-      digitalWrite(LED_POWER_PIN ,HIGH); //Turning off the LED
-      delayMicroseconds(SLEEP_TIME); //Delay before next reading
-
-      calcVoltage = voMeasured*(5.0/1024); //0-5V mapped to 0 - 1023 integer values for real voltage value
-      dustDensity = 0.17*calcVoltage-0.1; //Datasheet: Calibration curve
-      //Read data and store it to variables hum and temp
-      hum = dht.readHumidity(); // Relative Humidity in %
-      temp = dht.readTemperature(); // Temperature in deg C
-
-
-      // TODO: Not hardcode the microclimate and location
-      fileProcessor.pushData(dustDensity, 1.35432101, 103.8765432, 0);
-    }
-    if ( currentTime >= nextMinuteTime ) {
-      long prevMinuteTime = nextMinuteTime - 60;
-
-      // Average past minute readings & save as previous minute
-      fileProcessor.openAppropiateFile(prevMinuteTime);
-      fileProcessor.storeAverageData(prevMinuteTime, stateManager.microclimate);
-      nextMinuteTime = calculateNextMinute();
-      ROMVar::setNextMinuteTime(nextMinuteTime);
-      
-    }
+    // long loopTime = stateManager.getTimeStamp();
+    // long currentTime = ROMVar::getCurrentTime();
+    // long nextMinuteTime = ROMVar::getNextMinuteTime();
+    //
+    // if ( loopTime > currentTime ) {
+    //   currentTime = loopTime;
+    //   ROMVar::setCurrentTime(currentTime);
+    //
+    //   float voMeasured = 0;
+    //   float calcVoltage = 0;
+    //   float dustDensity = 0;
+    //
+    //   digitalWrite(LED_POWER_PIN ,LOW); //Turning on the LED; sinking current (i.e. light the LED connected through a series reistor to 5V)
+    //   delayMicroseconds(SAMPLING_TIME); //Duration of sampling
+    //
+    //   voMeasured = analogRead(MEASURE_PIN); //Reading the voltage measured
+    //
+    //   delayMicroseconds(DELTA_TIME); //Completing excitation pulse
+    //   digitalWrite(LED_POWER_PIN ,HIGH); //Turning off the LED
+    //   delayMicroseconds(SLEEP_TIME); //Delay before next reading
+    //
+    //   calcVoltage = voMeasured*(5.0/1024); //0-5V mapped to 0 - 1023 integer values for real voltage value
+    //   dustDensity = 0.17*calcVoltage-0.1; //Datasheet: Calibration curve
+    //   //Read data and store it to variables hum and temp
+    //   hum = dht.readHumidity(); // Relative Humidity in %
+    //   temp = dht.readTemperature(); // Temperature in deg C
+    //
+    //
+    //   // TODO: Not hardcode the microclimate and location
+    //   fileProcessor.pushData(dustDensity, 1.35432101, 103.8765432, 0);
+    // }
+    // if ( currentTime >= nextMinuteTime ) {
+    //   long prevMinuteTime = nextMinuteTime - 60;
+    //
+    //   // Average past minute readings & save as previous minute
+    //   fileProcessor.openAppropiateFile(prevMinuteTime);
+    //   fileProcessor.storeAverageData(prevMinuteTime, stateManager.microclimate);
+    //   nextMinuteTime = calculateNextMinute();
+    //   ROMVar::setNextMinuteTime(nextMinuteTime);
+    //
+    // }
 
   }
 
   // Send packets if there's something requesting it
-  fileProcessor.sendSomePackets(btSerial);
+  // fileProcessor.sendSomePackets(btSerial);
 
   /**
    * Arduino date format
