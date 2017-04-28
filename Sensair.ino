@@ -4,7 +4,7 @@
 //#include <SPI.h>
 
 // Including library for DHT22 (Temp and RH sensor)
-// #include <DHT.h>;
+#include <DHT.h>
 
 //Including library for GPS
 // #include <TinyGPS++.h>
@@ -55,9 +55,9 @@
 // FileProcessor fileProcessor;
 
 //Defining pins for DHT22
-// #define DHTPIN 2     // what pin we're connected to
-// #define DHTTYPE DHT22   // DHT 22  (AM2302)
-// DHT dht(DHTPIN, DHTTYPE); //// Initialize DHT sensor for normal
+#define DHTPIN 17     // what pin we're connected to
+#define DHTTYPE DHT22   // DHT 22  (AM2302)
+DHT dht(DHTPIN, DHTTYPE); //// Initialize DHT sensor for normal
 
 //Defining pins for GPS
 // SoftwareSerial gpsSerial(3, 2); //RX=pin 10, TX=pin 11
@@ -67,10 +67,6 @@
 // unsigned int deltaTime = 40; //Datasheet: Duration of the whole excitation pulse: 320 µs; Duration before switching off LED: 40 µs
 // unsigned int sleepTime = 9680; //Datasheet: Pulse Cycle: 10ms; Remaining time: 10,000 - 320 = 9680 µs
 
-//Variables for DHT22
-// int chk;
-// float hum;
-// float temp;
 
 // Required for the file operations
 // long currentTime;
@@ -89,7 +85,7 @@ void setup() {
   pinMode(WORKING_LED, OUTPUT);
   digitalWrite(WORKING_LED, HIGH);
 
-  // Serial.begin(BAUD_RATE); //Setting the speed of communication in bits per second; Arduino default: 9600
+  Serial.begin(BAUD_RATE); //Setting the speed of communication in bits per second; Arduino default: 9600
   // btSerial.begin(BAUD_RATE);
   // gpsSerial.begin(BAUD_RATE);//This opens up communications to the GPS
   //
@@ -191,6 +187,9 @@ void loop() {
     // }
   }
   {
+    // Variables for DHT22
+    float hum;
+    float temp;
     // long loopTime = stateManager.getTimeStamp();
     // long currentTime = ROMVar::getCurrentTime();
     // long nextMinuteTime = ROMVar::getNextMinuteTime();
@@ -215,8 +214,15 @@ void loop() {
     //   calcVoltage = voMeasured*(5.0/1024); //0-5V mapped to 0 - 1023 integer values for real voltage value
     //   dustDensity = 0.17*calcVoltage-0.1; //Datasheet: Calibration curve
     //   //Read data and store it to variables hum and temp
-    //   hum = dht.readHumidity(); // Relative Humidity in %
-    //   temp = dht.readTemperature(); // Temperature in deg C
+      hum = dht.readHumidity(); // Relative Humidity in %
+      temp = dht.readTemperature(); // Temperature in deg C
+      Serial.print("Hum: ");
+      Serial.print(hum);
+      Serial.print("% Temp: ");
+      Serial.print(temp);
+      Serial.println("C");
+
+
     //
     //
     //   // TODO: Not hardcode the microclimate and location
@@ -289,5 +295,5 @@ void loop() {
 //    tft.fillRect(80,60,40,18,ST7735_BLACK);
 //  }
 
-  delay(50);
+  delay(900);
 }
