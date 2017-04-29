@@ -1,7 +1,7 @@
 //Including library for TFT Screen
 //#include <Adafruit_GFX.h>    // Core graphics library
 //#include <Adafruit_ST7735.h> // Hardware-specific library
-//#include <SPI.h>
+
 
 // Including library for DHT22 (Temp and RH sensor)
 #include <DHT.h>
@@ -20,10 +20,18 @@
 // #include "classes/FileProcessor.h"
 // #include "classes/EEPROMVariables.h"
 
+#include <SD.h>
+#include <SPI.h>
+
+
+//Defining pins for DHT22
+#define DHTPIN 17     // what pin we're connected to
+#define DHTTYPE DHT22   // DHT 22  (AM2302)
+DHT dht(DHTPIN, DHTTYPE); //// Initialize DHT sensor for normal
 
 //Defining pins for Sharp sensor
 #define MEASURE_PIN A0
-#define LED_POWER_PIN 8
+#define LED_POWER_PIN 10
 
 // Datasheet: Duration before measuring the ouput signal (after switching on LED): 280 µs
 #define SAMPLING_TIME   280
@@ -32,8 +40,8 @@
 // Datasheet: Pulse Cycle: 10ms; Remaining time: 10,000 - 320 = 9680 µs
 #define SLEEP_TIME      9680
 
-#define BLUETOOTH_RX 7
-#define BLUETOOTH_TX 9
+// #define BLUETOOTH_RX 7
+// #define BLUETOOTH_TX 9
 
 #define BAUD_RATE     9600
 
@@ -53,11 +61,6 @@
 // SoftwareSerial btSerial(BLUETOOTH_RX, BLUETOOTH_TX);
 // StateManager stateManager;
 // FileProcessor fileProcessor;
-
-//Defining pins for DHT22
-#define DHTPIN 17     // what pin we're connected to
-#define DHTTYPE DHT22   // DHT 22  (AM2302)
-DHT dht(DHTPIN, DHTTYPE); //// Initialize DHT sensor for normal
 
 //Defining pins for GPS
 // SoftwareSerial gpsSerial(3, 2); //RX=pin 10, TX=pin 11
@@ -124,7 +127,20 @@ void setup() {
   // Serial.println(count);
   // fileProcessor.startSendingData(1490830040, 100);
   // Serial.println(fileProcessor.getFirstReading());
-  Serial.write("Start");
+
+
+  if (SD.begin(20)) {
+    Serial.println("SD Available");
+    File currentDayFile = SD.open("TEST.TXT", FILE_WRITE);
+    currentDayFile.println(1203, DEC);
+  } else {
+    Serial.println("NO SD");
+  }
+
+
+
+
+  Serial.println("Start");
 
   // Triple blink to indicate ready
   digitalWrite(WORKING_LED, LOW);
@@ -198,29 +214,33 @@ void loop() {
     //   currentTime = loopTime;
     //   ROMVar::setCurrentTime(currentTime);
     //
-    //   float voMeasured = 0;
-    //   float calcVoltage = 0;
-    //   float dustDensity = 0;
-    //
-    //   digitalWrite(LED_POWER_PIN ,LOW); //Turning on the LED; sinking current (i.e. light the LED connected through a series reistor to 5V)
-    //   delayMicroseconds(SAMPLING_TIME); //Duration of sampling
-    //
-    //   voMeasured = analogRead(MEASURE_PIN); //Reading the voltage measured
-    //
-    //   delayMicroseconds(DELTA_TIME); //Completing excitation pulse
-    //   digitalWrite(LED_POWER_PIN ,HIGH); //Turning off the LED
-    //   delayMicroseconds(SLEEP_TIME); //Delay before next reading
-    //
-    //   calcVoltage = voMeasured*(5.0/1024); //0-5V mapped to 0 - 1023 integer values for real voltage value
-    //   dustDensity = 0.17*calcVoltage-0.1; //Datasheet: Calibration curve
-    //   //Read data and store it to variables hum and temp
+      float voMeasured = 0;
+      float calcVoltage = 0;
+      float dustDensity = 0;
+
+      digitalWrite(LED_POWER_PIN ,LOW); //Turning on the LED; sinking current (i.e. light the LED connected through a series reistor to 5V)
+      delayMicroseconds(SAMPLING_TIME); //Duration of sampling
+
+      voMeasured = analogRead(MEASURE_PIN); //Reading the voltage measured
+
+      delayMicroseconds(DELTA_TIME); //Completing excitation pulse
+      digitalWrite(LED_POWER_PIN ,HIGH); //Turning off the LED
+      delayMicroseconds(SLEEP_TIME); //Delay before next reading
+
+      calcVoltage = voMeasured*(5.0/1024); //0-5V mapped to 0 - 1023 integer values for real voltage value
+      dustDensity = 0.17*calcVoltage-0.1; //Datasheet: Calibration curve
+      //Read data and store it to variables hum and temp
       hum = dht.readHumidity(); // Relative Humidity in %
       temp = dht.readTemperature(); // Temperature in deg C
       Serial.print("Hum: ");
       Serial.print(hum);
       Serial.print("% Temp: ");
       Serial.print(temp);
-      Serial.println("C");
+      Serial.print("C");
+
+      Serial.print(" Dust: ");
+      Serial.println(dustDensity);
+
 
 
     //
@@ -238,6 +258,9 @@ void loop() {
     //   ROMVar::setNextMinuteTime(nextMinuteTime);
     //
     // }
+    //
+
+    //
 
   }
 
