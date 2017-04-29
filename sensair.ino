@@ -16,13 +16,16 @@
 //
 // #include "classes/CommandProcessor.h"
 // #include "classes/CommandProcessor.cpp"
-// #include "classes/StateManager.h"
+#include "classes/StateManager.h"
 // #include "classes/FileProcessor.h"
-// #include "classes/EEPROMVariables.h"
+#include "classes/EEPROMVariables.h"
 
+// Temp used for testing
 #include <SD.h>
 #include <SPI.h>
-
+// #include <DS1307RTC.h>
+// #include <Time.h>
+#include <Wire.h>
 
 //Defining pins for DHT22
 #define DHTPIN 17     // what pin we're connected to
@@ -59,7 +62,7 @@ DHT dht(DHTPIN, DHTTYPE); //// Initialize DHT sensor for normal
 
 //Adafruit_ST7735 tft = Adafruit_ST7735(TFT_CS, TFT_DC, TFT_MOSI, TFT_SCLK, TFT_RST);
 // SoftwareSerial btSerial(BLUETOOTH_RX, BLUETOOTH_TX);
-// StateManager stateManager;
+StateManager stateManager;
 // FileProcessor fileProcessor;
 
 //Defining pins for GPS
@@ -80,7 +83,6 @@ DHT dht(DHTPIN, DHTTYPE); //// Initialize DHT sensor for normal
 //   return currentDateTime.unixtime() + (60 - currentDateTime.second());
 // }
 
-
 void setup() {
   pinMode(POWER_LED, OUTPUT);
   digitalWrite(POWER_LED, LOW);
@@ -89,13 +91,17 @@ void setup() {
   digitalWrite(WORKING_LED, HIGH);
 
   Serial.begin(BAUD_RATE); //Setting the speed of communication in bits per second; Arduino default: 9600
+
+
   // btSerial.begin(BAUD_RATE);
   // gpsSerial.begin(BAUD_RATE);//This opens up communications to the GPS
   //
   // Wire.begin();
   // dht.begin();
   //
-  // stateManager.init();
+  stateManager.init();
+  stateManager.printNow();
+
   // fileProcessor.init();
   //
   // ROMVar::setCurrentTime(stateManager.getTimeStamp());
@@ -136,8 +142,6 @@ void setup() {
   } else {
     Serial.println("NO SD");
   }
-
-
 
 
   Serial.println("Start");
@@ -318,5 +322,42 @@ void loop() {
 //    tft.fillRect(80,60,40,18,ST7735_BLACK);
 //  }
 
+  // tmElements_t tm;
+  //
+  // time_t unixtime = RTC.get();
+  // Serial.println(unixtime);
+  // if (RTC.read(tm)) {
+  //   Serial.print("Ok, Time = ");
+  //   print2digits(tm.Hour);
+  //   Serial.write(':');
+  //   print2digits(tm.Minute);
+  //   Serial.write(':');
+  //   print2digits(tm.Second);
+  //   Serial.print(", Date (D/M/Y) = ");
+  //   Serial.print(tm.Day);
+  //   Serial.write('/');
+  //   Serial.print(tm.Month);
+  //   Serial.write('/');
+  //   Serial.print(tmYearToCalendar(tm.Year));
+  //   Serial.println();
+  // } else {
+  //   if (RTC.chipPresent()) {
+  //     Serial.println("The DS1307 is stopped.  Please run the SetTime");
+  //     Serial.println("example to initialize the time and begin running.");
+  //     Serial.println();
+  //   } else {
+  //     Serial.println("DS1307 read error!  Please check the circuitry.");
+  //     Serial.println();
+  //   }
+  //   delay(9000);
+  // }
+
   delay(900);
+}
+
+void print2digits(int number) {
+  if (number >= 0 && number < 10) {
+    Serial.write('0');
+  }
+  Serial.print(number);
 }

@@ -4,6 +4,7 @@
 #ifndef _STATE_MANAGER_H_
 #define _STATE_MANAGER_H_
 #include <Arduino.h>
+#include <RTClib.h>
 
 // Defining constants
 
@@ -32,6 +33,22 @@ public:
   // Time Getter/Setter
   DateTime getDateTime() {
     return rtc.now();
+  }
+
+  void printNow() {
+    DateTime now = getDateTime();
+    Serial.print(now.day());
+    Serial.print("/");
+    Serial.print(now.month());
+    Serial.print("/");
+    Serial.print(now.year());
+    Serial.print(" ");
+    Serial.print(now.hour());
+    Serial.print(":");
+    Serial.print(now.minute());
+    Serial.print(":");
+    Serial.print(now.second());
+    Serial.println();
   }
   long getTimeStamp() {
     return rtc.now().unixtime();

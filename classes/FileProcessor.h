@@ -6,7 +6,7 @@
 
 #include <Arduino.h>
 #include <SD.h>
-#include "RTClib.h"
+// #include "RTClib.h"
 #include "EEPROMVariables.h"
 
 
