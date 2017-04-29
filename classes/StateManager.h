@@ -13,6 +13,12 @@
 
 class StateManager {
 private:
+  void print2digits(int number) {
+    if (number >= 0 && number < 10) {
+      Serial.write('0');
+    }
+    Serial.print(number);
+  }
 public:
   uint8_t microclimate;
   RTC_DS1307 rtc;
@@ -37,17 +43,17 @@ public:
 
   void printNow() {
     DateTime now = getDateTime();
-    Serial.print(now.day());
+    print2digits(now.day());
     Serial.print("/");
-    Serial.print(now.month());
+    print2digits(now.month());
     Serial.print("/");
     Serial.print(now.year());
     Serial.print(" ");
-    Serial.print(now.hour());
+    print2digits(now.hour());
     Serial.print(":");
-    Serial.print(now.minute());
+    print2digits(now.minute());
     Serial.print(":");
-    Serial.print(now.second());
+    print2digits(now.second());
     Serial.println();
   }
   long getTimeStamp() {

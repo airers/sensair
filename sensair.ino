@@ -74,14 +74,10 @@ StateManager stateManager;
 // unsigned int sleepTime = 9680; //Datasheet: Pulse Cycle: 10ms; Remaining time: 10,000 - 320 = 9680 µs
 
 
-// Required for the file operations
-// long currentTime;
-// long nextMinuteTime;
-
-// long calculateNextMinute() {
-//   DateTime currentDateTime(ROMVar::getCurrentTime());
-//   return currentDateTime.unixtime() + (60 - currentDateTime.second());
-// }
+long calculateNextMinute() {
+  DateTime currentDateTime(ROMVar::getCurrentTime());
+  return currentDateTime.unixtime() + (60 - currentDateTime.second());
+}
 
 void setup() {
   pinMode(POWER_LED, OUTPUT);
@@ -103,13 +99,12 @@ void setup() {
   stateManager.printNow();
 
   // fileProcessor.init();
-  //
-  // ROMVar::setCurrentTime(stateManager.getTimeStamp());
-  // ROMVar::setNextMinuteTime(calculateNextMinute());
-  //
+
+  ROMVar::setCurrentTime(stateManager.getTimeStamp());
+  ROMVar::setNextMinuteTime(calculateNextMinute());
+
   // pinMode(LED_POWER_PIN ,OUTPUT); //Configures the digital pin as an output (to set it at 0V and 5V per cycle; turning on and off the LED
   // pinMode(10, OUTPUT); //Configures the pin of the SD card reader as an output
-
 
 //  tft.initR(INITR_BLACKTAB);   // initialize a ST7735S chip, black tab
 //  tft.fillScreen(ST7735_BLACK);
@@ -134,7 +129,7 @@ void setup() {
   // fileProcessor.startSendingData(1490830040, 100);
   // Serial.println(fileProcessor.getFirstReading());
 
-
+  pinMode(20, OUTPUT); //Configures the pin of the SD card reader as an output
   if (SD.begin(20)) {
     Serial.println("SD Available");
     File currentDayFile = SD.open("TEST.TXT", FILE_WRITE);
@@ -210,14 +205,14 @@ void loop() {
     // Variables for DHT22
     float hum;
     float temp;
-    // long loopTime = stateManager.getTimeStamp();
-    // long currentTime = ROMVar::getCurrentTime();
-    // long nextMinuteTime = ROMVar::getNextMinuteTime();
-    //
-    // if ( loopTime > currentTime ) {
-    //   currentTime = loopTime;
-    //   ROMVar::setCurrentTime(currentTime);
-    //
+    long loopTime = stateManager.getTimeStamp();
+    long currentTime = ROMVar::getCurrentTime();
+    long nextMinuteTime = ROMVar::getNextMinuteTime();
+
+    if ( loopTime > currentTime ) {
+      currentTime = loopTime;
+      ROMVar::setCurrentTime(currentTime);
+
       float voMeasured = 0;
       float calcVoltage = 0;
       float dustDensity = 0;
@@ -245,13 +240,9 @@ void loop() {
       Serial.print(" Dust: ");
       Serial.println(dustDensity);
 
-
-
-    //
-    //
-    //   // TODO: Not hardcode the microclimate and location
-    //   fileProcessor.pushData(dustDensity, 1.35432101, 103.8765432, 0);
-    // }
+      // TODO: Not hardcode the microclimate and location
+      // fileProcessor.pushData(dustDensity, 1.35432101, 103.8765432, 0);
+    }
     // if ( currentTime >= nextMinuteTime ) {
     //   long prevMinuteTime = nextMinuteTime - 60;
     //
@@ -352,12 +343,5 @@ void loop() {
   //   delay(9000);
   // }
 
-  delay(900);
-}
-
-void print2digits(int number) {
-  if (number >= 0 && number < 10) {
-    Serial.write('0');
-  }
-  Serial.print(number);
+  delay(50);
 }
