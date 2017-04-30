@@ -12,7 +12,7 @@
 //Including libraries to connect RTC by Wire and I2C
 // #include <Wire.h>
 // #include <RTClib.h>
-// #include <SoftwareSerial.h>
+#include <SoftwareSerial.h>
 //
 // #include "classes/CommandProcessor.h"
 // #include "classes/CommandProcessor.cpp"
@@ -43,8 +43,8 @@ DHT dht(DHTPIN, DHTTYPE); //// Initialize DHT sensor for normal
 // Datasheet: Pulse Cycle: 10ms; Remaining time: 10,000 - 320 = 9680 µs
 #define SLEEP_TIME      9680
 
-// #define BLUETOOTH_RX 7
-// #define BLUETOOTH_TX 9
+#define BLUETOOTH_RX 15
+#define BLUETOOTH_TX 16
 
 #define BAUD_RATE     9600
 
@@ -62,17 +62,20 @@ DHT dht(DHTPIN, DHTTYPE); //// Initialize DHT sensor for normal
 // RST   RST     9
 // CS    CS      8
 
+// #define TFT_SCLK   21
+// #define TFT_MOSI   22
 #define TFT_SCLK   12
 #define TFT_MOSI   11
 #define TFT_DC     10
 #define TFT_RST    9
 #define TFT_CS     8
 
+#define BTSerial Serial1
 
 
 
 Adafruit_ST7735 tft = Adafruit_ST7735(TFT_CS, TFT_DC, TFT_MOSI, TFT_SCLK, TFT_RST);
-// SoftwareSerial btSerial(BLUETOOTH_RX, BLUETOOTH_TX);
+SoftwareSerial btSerial(BLUETOOTH_RX, BLUETOOTH_TX);
 StateManager stateManager;
 // FileProcessor fileProcessor;
 
@@ -98,9 +101,9 @@ void setup() {
   digitalWrite(WORKING_LED, HIGH);
 
   Serial.begin(BAUD_RATE); //Setting the speed of communication in bits per second; Arduino default: 9600
+  // Serial1.begin(BAUD_RATE);
 
-
-  // btSerial.begin(BAUD_RATE);
+  btSerial.begin(BAUD_RATE);
   // gpsSerial.begin(BAUD_RATE);//This opens up communications to the GPS
   //
   // Wire.begin();
@@ -137,13 +140,13 @@ void setup() {
   // fileProcessor.startSendingData(1490830040, 100);
   // Serial.println(fileProcessor.getFirstReading());
 
-  // pinMode(20, OUTPUT); //Configures the pin of the SD card reader as an output
-  if (SD.begin(8)) {
+  // pinMode(20, INPUT_PULLUP); //Configures the pin of the SD card reader as an output
+  if (!SD.begin(20)) {
+    Serial.println("NO SD");
+  } else {
     Serial.println("SD Available");
     File currentDayFile = SD.open("TEST.TXT", FILE_WRITE);
     currentDayFile.println(1203, DEC);
-  } else {
-    Serial.println("NO SD");
   }
 
 
@@ -172,26 +175,48 @@ void setup() {
 
 void loop() {
   // Process the incoming bluetooth packets
-  // {
-  //   byte type = 0;
-  //   uint8_t len = 0;
-  //   btSerial.listen();
-  //   while ( btSerial.available() ) {
-  //     type = btSerial.read();
-  //     if ( btSerial.available() ) {
-  //       len = btSerial.read();
-  //     }
-  //     byte data [len];
-  //     int i = 0;
-  //     while ( i < len && btSerial.available() ) {
-  //       data[i] = btSerial.read();
-  //       i++;
-  //     }
-  //
-  //     Serial.println(len);
-  //     CommandProcessor::processPacket(type, len, data, btSerial, stateManager, fileProcessor);
-  //   }
-  // }
+  {
+    byte type = 0;
+    uint8_t len = 0;
+    bool read = false;
+    if ( btSerial.available() ) {
+      Serial.println("Received packet");
+    }
+    while(btSerial.available()) {
+      Serial.print(btSerial.read());
+      Serial.print(" ");
+      read = true;
+    }
+    if ( read )
+    Serial.println();
+
+    // btSerial.write(CMD_CONNECTION_ACK);
+    // int packet_len = 4;
+    // btSerial.write(packet_len);
+    // long_u timestamp;
+    // timestamp.data = stateManager.getTimeStamp();
+    // btSerial.write(timestamp.bytes[0]);
+    // btSerial.write(timestamp.bytes[1]);
+    // btSerial.write(timestamp.bytes[2]);
+    // btSerial.write(timestamp.bytes[3]);
+    // btSerial.print("\r\n");
+
+    // while ( BTSerial.available() ) {
+    //   type = BTSerial.read();
+    //   if ( BTSerial.available() ) {
+    //     len = BTSerial.read();
+    //   }
+    //   byte data [len];
+    //   int i = 0;
+    //   while ( i < len && BTSerial.available() ) {
+    //     data[i] = BTSerial.read();
+    //     i++;
+    //   }
+    //
+    //   Serial.println(i);
+    //   // CommandProcessor::processPacket(type, len, data, btSerial, stateManager, fileProcessor);
+    // }
+  }
 
   // Process GPS packets
   {
