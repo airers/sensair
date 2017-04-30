@@ -1,6 +1,6 @@
 //Including library for TFT Screen
-//#include <Adafruit_GFX.h>    // Core graphics library
-//#include <Adafruit_ST7735.h> // Hardware-specific library
+#include <Adafruit_GFX.h>    // Core graphics library
+#include <Adafruit_ST7735.h> // Hardware-specific library
 
 
 // Including library for DHT22 (Temp and RH sensor)
@@ -34,7 +34,7 @@ DHT dht(DHTPIN, DHTTYPE); //// Initialize DHT sensor for normal
 
 //Defining pins for Sharp sensor
 #define MEASURE_PIN A0
-#define LED_POWER_PIN 10
+#define LED_POWER_PIN 14
 
 // Datasheet: Duration before measuring the ouput signal (after switching on LED): 280 µs
 #define SAMPLING_TIME   280
@@ -49,18 +49,29 @@ DHT dht(DHTPIN, DHTTYPE); //// Initialize DHT sensor for normal
 #define BAUD_RATE     9600
 
 //Defining pins for TFT Screen
-#define TFT_CS     6
-#define TFT_RST    8
-#define TFT_DC     7
-#define TFT_SCLK 5
-#define TFT_MOSI 4
+
 
 // LED pins
 #define POWER_LED 6
-#define WORKING_LED 7
+#define WORKING_LED 5
+
+// Pins on Screen
+// CLK   SCLK    12
+// SDA   MOSI    11
+// RS    RS/DC   10
+// RST   RST     9
+// CS    CS      8
+
+#define TFT_SCLK   12
+#define TFT_MOSI   11
+#define TFT_DC     10
+#define TFT_RST    9
+#define TFT_CS     8
 
 
-//Adafruit_ST7735 tft = Adafruit_ST7735(TFT_CS, TFT_DC, TFT_MOSI, TFT_SCLK, TFT_RST);
+
+
+Adafruit_ST7735 tft = Adafruit_ST7735(TFT_CS, TFT_DC, TFT_MOSI, TFT_SCLK, TFT_RST);
 // SoftwareSerial btSerial(BLUETOOTH_RX, BLUETOOTH_TX);
 StateManager stateManager;
 // FileProcessor fileProcessor;
@@ -100,14 +111,11 @@ void setup() {
 
   // fileProcessor.init();
 
-  ROMVar::setCurrentTime(stateManager.getTimeStamp());
-  ROMVar::setNextMinuteTime(calculateNextMinute());
-
   // pinMode(LED_POWER_PIN ,OUTPUT); //Configures the digital pin as an output (to set it at 0V and 5V per cycle; turning on and off the LED
   // pinMode(10, OUTPUT); //Configures the pin of the SD card reader as an output
 
-//  tft.initR(INITR_BLACKTAB);   // initialize a ST7735S chip, black tab
-//  tft.fillScreen(ST7735_BLACK);
+  tft.initR(INITR_BLACKTAB);   // initialize a ST7735S chip, black tab
+  tft.fillScreen(ST7735_BLACK);
 
   /**
    * Tests show that it takes about 1.9ms to read a single line from a file
@@ -129,8 +137,8 @@ void setup() {
   // fileProcessor.startSendingData(1490830040, 100);
   // Serial.println(fileProcessor.getFirstReading());
 
-  pinMode(20, OUTPUT); //Configures the pin of the SD card reader as an output
-  if (SD.begin(20)) {
+  // pinMode(20, OUTPUT); //Configures the pin of the SD card reader as an output
+  if (SD.begin(8)) {
     Serial.println("SD Available");
     File currentDayFile = SD.open("TEST.TXT", FILE_WRITE);
     currentDayFile.println(1203, DEC);
@@ -141,6 +149,8 @@ void setup() {
 
   Serial.println("Start");
 
+  ROMVar::setCurrentTime(stateManager.getTimeStamp());
+  ROMVar::setNextMinuteTime(calculateNextMinute());
   // Triple blink to indicate ready
   digitalWrite(WORKING_LED, LOW);
   delay(75);
@@ -201,10 +211,13 @@ void loop() {
     //   // Serial.println(gps.location.lng(), 6);
     // }
   }
+  float hum;
+  float temp;
+  float dustDensity = 0;
+
   {
     // Variables for DHT22
-    float hum;
-    float temp;
+
     long loopTime = stateManager.getTimeStamp();
     long currentTime = ROMVar::getCurrentTime();
     long nextMinuteTime = ROMVar::getNextMinuteTime();
@@ -215,8 +228,6 @@ void loop() {
 
       float voMeasured = 0;
       float calcVoltage = 0;
-      float dustDensity = 0;
-
       digitalWrite(LED_POWER_PIN ,LOW); //Turning on the LED; sinking current (i.e. light the LED connected through a series reistor to 5V)
       delayMicroseconds(SAMPLING_TIME); //Duration of sampling
 
@@ -231,29 +242,67 @@ void loop() {
       //Read data and store it to variables hum and temp
       hum = dht.readHumidity(); // Relative Humidity in %
       temp = dht.readTemperature(); // Temperature in deg C
-      Serial.print("Hum: ");
-      Serial.print(hum);
-      Serial.print("% Temp: ");
-      Serial.print(temp);
-      Serial.print("C");
+      // Serial.print("Hum: ");
+      // Serial.print(hum);
+      // Serial.print("% Temp: ");
+      // Serial.print(temp);
+      // Serial.print("C");
+      // Serial.print(" Dust: ");
+      // Serial.println(dustDensity);
 
-      Serial.print(" Dust: ");
-      Serial.println(dustDensity);
+      {
+        //Printing data onto TFT
+         tft.setTextColor(ST7735_WHITE);
+         tft.setCursor(20,10);
+         tft.setTextSize(2);
+         tft.println("SENSAIR");
+         tft.setTextSize(1);
+
+         tft.fillRect(80,40,40,10,ST7735_BLACK);
+
+         tft.setCursor(0, 40);
+         tft.drawLine(0, 30, tft.width()-1, 30, ST7735_WHITE); //draw line separator
+         tft.setTextColor(ST7735_YELLOW);
+         tft.print(" PM2.5 Conc :");
+         tft.setCursor(80, 40);
+         tft.setTextColor(ST7735_GREEN);
+         tft.println((float)dustDensity);
+
+         tft.fillRect(80,50,40,10,ST7735_BLACK);
+
+         tft.setCursor(0, 50);
+         tft.setTextColor(ST7735_YELLOW);
+         tft.print(" Humidity(%) :");
+         tft.setCursor(80, 50);
+         tft.setTextColor(ST7735_GREEN);
+         tft.println((float)hum);
+
+         tft.fillRect(80,60,40,10,ST7735_BLACK);
+
+         tft.setCursor(0, 60);
+         tft.setTextColor(ST7735_YELLOW);
+         tft.print(" Temp :");
+         tft.setCursor(80, 60);
+         tft.setTextColor(ST7735_GREEN);
+         tft.println((float)temp);
+
+         tft.drawLine(0, 75, tft.width()-1, 75, ST7735_WHITE); //draw line separator
+      }
 
       // TODO: Not hardcode the microclimate and location
       // fileProcessor.pushData(dustDensity, 1.35432101, 103.8765432, 0);
     }
-    // if ( currentTime >= nextMinuteTime ) {
-    //   long prevMinuteTime = nextMinuteTime - 60;
-    //
-    //   // Average past minute readings & save as previous minute
-    //   fileProcessor.openAppropiateFile(prevMinuteTime);
-    //   fileProcessor.storeAverageData(prevMinuteTime, stateManager.microclimate);
-    //   nextMinuteTime = calculateNextMinute();
-    //   ROMVar::setNextMinuteTime(nextMinuteTime);
-    //
-    // }
-    //
+    if ( currentTime >= nextMinuteTime ) {
+      long prevMinuteTime = nextMinuteTime - 60;
+
+      // Average past minute readings & save as previous minute
+      // fileProcessor.openAppropiateFile(prevMinuteTime);
+      // fileProcessor.storeAverageData(prevMinuteTime, stateManager.microclimate);
+      nextMinuteTime = calculateNextMinute();
+      ROMVar::setNextMinuteTime(nextMinuteTime);
+
+    }
+
 
     //
 
@@ -273,45 +322,6 @@ void loop() {
    * 88 219 181 26
    */
 
-//  {
-//
-//    //Printing data onto TFT
-//    tft.setTextColor(ST7735_fWHITE);
-//    tft.setCursor(20,10);
-//    tft.setTextSize(2);
-//    tft.println("SENSAIR");
-//    tft.setTextSize(1);
-//
-//    tft.setCursor(0, 40);
-//    tft.drawLine(0, 30, tft.width()-1, 30, ST7735_WHITE); //draw line separator
-//    tft.setTextColor(ST7735_YELLOW);
-//    tft.print(" PM2.5 Conc :");
-//    tft.setCursor(80, 40);
-//    tft.setTextColor(ST7735_GREEN);
-////    tft.println((float)dustDensity);
-//
-//    tft.setCursor(0, 50);
-//    tft.setTextColor(ST7735_YELLOW);
-//    tft.print(" Humidity(%) :");
-//    tft.setCursor(80, 50);
-//    tft.setTextColor(ST7735_GREEN);
-//    tft.println((float)hum);
-//
-//    tft.setCursor(0, 60);
-//    tft.setTextColor(ST7735_YELLOW);
-//    tft.print(" Temp :");
-//    tft.setCursor(80, 60);
-//    tft.setTextColor(ST7735_GREEN);
-//    tft.println((float)temp);
-//
-//    tft.drawLine(0, 70, tft.width()-1, 70, ST7735_WHITE); //draw line separator
-//
-//    delay(60000);
-//
-//    tft.fillRect(80,40,40,18,ST7735_BLACK);
-//    tft.fillRect(80,50,40,18,ST7735_BLACK);
-//    tft.fillRect(80,60,40,18,ST7735_BLACK);
-//  }
 
   // tmElements_t tm;
   //
