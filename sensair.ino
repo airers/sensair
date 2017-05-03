@@ -105,10 +105,10 @@ void setup() {
 
   btSerial.begin(BAUD_RATE);
   // gpsSerial.begin(BAUD_RATE);//This opens up communications to the GPS
-  //
-  // Wire.begin();
-  // dht.begin();
-  //
+
+  Wire.begin();
+  dht.begin();
+
   stateManager.init();
   stateManager.printNow();
 
@@ -146,7 +146,8 @@ void setup() {
   } else {
     Serial.println("SD Available");
     File currentDayFile = SD.open("TEST.TXT", FILE_WRITE);
-    currentDayFile.println(1203, DEC);
+    currentDayFile.println("Testing stuff");
+    currentDayFile.close();
   }
 
 
@@ -190,16 +191,16 @@ void loop() {
     if ( read )
     Serial.println();
 
-    // btSerial.write(CMD_CONNECTION_ACK);
-    // int packet_len = 4;
-    // btSerial.write(packet_len);
-    // long_u timestamp;
-    // timestamp.data = stateManager.getTimeStamp();
-    // btSerial.write(timestamp.bytes[0]);
-    // btSerial.write(timestamp.bytes[1]);
-    // btSerial.write(timestamp.bytes[2]);
-    // btSerial.write(timestamp.bytes[3]);
-    // btSerial.print("\r\n");
+    btSerial.write(CMD_CONNECTION_ACK);
+    int packet_len = 4;
+    btSerial.write(packet_len);
+    long_u timestamp;
+    timestamp.data = stateManager.getTimeStamp();
+    btSerial.write(timestamp.bytes[0]);
+    btSerial.write(timestamp.bytes[1]);
+    btSerial.write(timestamp.bytes[2]);
+    btSerial.write(timestamp.bytes[3]);
+    btSerial.print("\r\n");
 
     // while ( BTSerial.available() ) {
     //   type = BTSerial.read();
@@ -267,13 +268,14 @@ void loop() {
       //Read data and store it to variables hum and temp
       hum = dht.readHumidity(); // Relative Humidity in %
       temp = dht.readTemperature(); // Temperature in deg C
-      // Serial.print("Hum: ");
-      // Serial.print(hum);
-      // Serial.print("% Temp: ");
-      // Serial.print(temp);
-      // Serial.print("C");
-      // Serial.print(" Dust: ");
-      // Serial.println(dustDensity);
+      Serial.print("Hum: ");
+      Serial.print(hum);
+      Serial.print("% Temp: ");
+      Serial.print(temp);
+      Serial.print("C");
+      Serial.print(" Dust: ");
+      Serial.println(dustDensity);
+      stateManager.printNow();
 
       {
         //Printing data onto TFT
