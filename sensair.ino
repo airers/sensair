@@ -43,8 +43,8 @@ DHT dht(DHTPIN, DHTTYPE); //// Initialize DHT sensor for normal
 // Datasheet: Pulse Cycle: 10ms; Remaining time: 10,000 - 320 = 9680 µs
 #define SLEEP_TIME      9680
 
-#define BLUETOOTH_RX 15
-#define BLUETOOTH_TX 16
+#define BLUETOOTH_RX 25
+#define BLUETOOTH_TX 26
 
 #define BAUD_RATE     9600
 
@@ -243,7 +243,6 @@ void loop() {
 
   {
     // Variables for DHT22
-
     long loopTime = stateManager.getTimeStamp();
     long currentTime = ROMVar::getCurrentTime();
     long nextMinuteTime = ROMVar::getNextMinuteTime();
