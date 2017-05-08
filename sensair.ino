@@ -138,15 +138,6 @@ void setup() {
 
   // pinMode(20, INPUT_PULLUP); //Configures the pin of the SD card reader as an output
 
-  // if (!SD.begin(20)) {
-  //   Serial.println("NO SD");
-  // } else {
-  //   Serial.println("SD Available");
-  //   File currentDayFile = SD.open("TEST.TXT", FILE_WRITE);
-  //   currentDayFile.println("Testing stuff");
-  //   currentDayFile.close();
-  // }
-
   Serial.println("Start");
 
   ROMVar::setCurrentTime(stateManager.getTimeStamp());
