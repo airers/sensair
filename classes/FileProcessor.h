@@ -6,12 +6,12 @@
 
 #include <Arduino.h>
 #include <SD.h>
-#include "RTClib.h"
+// #include "RTClib.h"
 #include "EEPROMVariables.h"
 
 
 //Defining the pin for the SD Card reader
-#define SD_PIN 10
+#define SD_PIN 20
 #define SECONDS_IN_DAY 86400
 #define SECONDS_IN_HOUR 3600
 
@@ -84,7 +84,14 @@ public:
     firstReading = ROMVar::getFirstReading();
     if (SD.begin(SD_PIN)) {
       cardAvailable = true;
+      Serial.println("SD Working");
+    } else {
+      Serial.println("SD ERROR");
     }
+  }
+
+  bool getCardAvailable() {
+    return cardAvailable;
   }
 
   long setFirstReading(long time) {
@@ -167,7 +174,13 @@ public:
       currentDayFile.print(accuracy,2);
       currentDayFile.write("\n");
       currentDayFile.close();
-      if ( firstReading == 0 ) {
+
+      Serial.print("Stored data: ");
+      Serial.print(now.unixtime());
+      Serial.print(" ");
+      Serial.println(readingAvg);
+
+      if ( firstReading <= 0 ) {
         setFirstReading(minuteTime);
       }
       ROMVar::setLatestReading(minuteTime);

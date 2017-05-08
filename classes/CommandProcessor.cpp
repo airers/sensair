@@ -26,7 +26,7 @@ void CommandProcessor::processPacket(byte type,
     break;
     case CMD_SET_TIME:
     {
-      // -Serial.println("Setting time");
+      Serial.println("Setting time");
       // -Serial.println(len);
       if ( len >= 4 ) {
         long_u timestamp;

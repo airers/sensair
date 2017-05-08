@@ -1,24 +1,25 @@
 # Sensair
 
-Code for the arduino sensor device module thing.
+This project contains the Arduino code for the sensor device codenamed Sensair.
 
-This implements the custom data storage and transfer protocols to allow storage of large (for the arduino) amounts of data and bluetooth communication with the Viewair Android application.
+This implements the custom data storage and transfer protocols to allow storage of large (for the Arduino) amounts of data and bluetooth communication with the Viewair Android application.
 
-The Arduino device requires the following modules:
+Sensair requires the following modules:
+- microcontroller (Teensy++ 2.0)
 - Bluetooth (HC-05)
 - GPS (??)
-- RTC
-- SD Card
+- RTC (DS1307)
+- SD Card reader
 - Sharp PM2.5 detector
 
 ## Issues
 
-The arduino nano cannot support the TFT library. It's out of memory. Plans have been made to get hold of the Teensy 2.0 ++ device that allows more memory.
+All components still untested.
 
 
 ## Tests
 
-Since arduino has no testing interface to speak of, here are a list of manual tests to run to ensure the thing is still working. For the most part, I suppose we'll have to rely on the Serial output to do any debugging.
+Since Arduino has no testing interface to speak of, here are a list of manual tests to run to ensure the thing is still working. For the most part, I suppose we'll have to rely on the Serial output to do any debugging.
 
 **File processing**
 
