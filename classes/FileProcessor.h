@@ -32,6 +32,9 @@ public:
   // Used for reading files
   // If the iterator is 0, it means the program is not sending files.
   long readingIterator = 0; //1490816240;
+  // The position in a file to start from so don't have to process
+  // the packets that are not used
+  long fileIterator = 0;
   uint16_t packetsToSend = 0;
 
   static long getStartOfDay(long timestamp) {
@@ -239,7 +242,7 @@ public:
           break;
         }
       }
-      // long startTime = millis();
+
       File currentFile = SD.open(filename, FILE_READ);
       if ( currentFile ) {
         while ( currentFile.available() ) {
@@ -272,6 +275,7 @@ public:
 
 
   void startSendingData(long from, uint16_t count) {
+    fileIterator = 0;
     readingIterator = from;
     packetsToSend = count;
   }
@@ -337,8 +341,9 @@ public:
 
     long latestReading = ROMVar::getLatestReading();
     char * filename = FileProcessor::timestampToFilename(readingIterator);
-    if ( !SD.exists(filename) ) {
+    if ( !SD.exists(filename) ) { // Skip if file does not exist
       readingIterator = FileProcessor::getStartOfDay(readingIterator) + SECONDS_IN_DAY;
+      fileIterator = 0;
       if ( readingIterator <= latestReading ) {
       } else {
         readingIterator = 0;
@@ -356,6 +361,7 @@ public:
     char * buffer = (char*)malloc(90);
     if ( currentFile ) {
       int lines = 0;
+      currentFile.seek(fileIterator); // Skip to the part from the previous read cycle
       while ( currentFile.available() ) {
         char r = '\0';
         int i = 0;
@@ -371,23 +377,22 @@ public:
           lines++;
           packetsToSend--;
           if ( packetsToSend == 0 || lines >= 5 ) {
+            fileIterator = currentFile.position();
             break;
           }
         };
       }
       Serial.println(packetsToSend);
-      if ( packetsToSend == 0 ) {
+      if ( packetsToSend == 0 ) { // Done sending files
         Serial.println("Done");
-        readingIterator = 0;
-      }
-      if ( lines == 0 ) {
+        readingIterator = 0; // Reset the iterator to indicate nothing is sending
+      } else if ( lines < 5 ) { // Reached end of file
         Serial.println("EOF");
         readingIterator = FileProcessor::getStartOfDay(readingIterator) + SECONDS_IN_DAY;
-        // -Serial.println(readingIterator);
+        fileIterator = 0;
       }
       currentFile.close();
-      // free(&currentFile);
-      free(buffer);
+z           free(buffer);
 
       // long duration = millis() - startTime;
       // // -Serial.print("Duration: ");
