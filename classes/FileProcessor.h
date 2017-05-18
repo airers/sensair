@@ -14,6 +14,8 @@
 #define SD_PIN 20
 #define SECONDS_IN_DAY 86400
 #define SECONDS_IN_HOUR 3600
+// Takes about 1040ms to send this many
+#define READINGS_PER_PACKET 30
 
 class FileProcessor {
 private:
@@ -376,7 +378,7 @@ public:
         if ( processLine(buffer, btSerial) ) {
           lines++;
           packetsToSend--;
-          if ( packetsToSend == 0 || lines >= 5 ) {
+          if ( packetsToSend == 0 || lines >= READINGS_PER_PACKET ) {
             fileIterator = currentFile.position();
             break;
           }
@@ -386,13 +388,13 @@ public:
       if ( packetsToSend == 0 ) { // Done sending files
         Serial.println("Done");
         readingIterator = 0; // Reset the iterator to indicate nothing is sending
-      } else if ( lines < 5 ) { // Reached end of file
+      } else if ( lines < READINGS_PER_PACKET ) { // Reached end of file
         Serial.println("EOF");
         readingIterator = FileProcessor::getStartOfDay(readingIterator) + SECONDS_IN_DAY;
         fileIterator = 0;
       }
       currentFile.close();
-z           free(buffer);
+      free(buffer);
 
       long duration = millis() - startTime;
       Serial.print("Duration: ");

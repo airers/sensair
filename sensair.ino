@@ -168,7 +168,7 @@ void setup() {
     return;
   }
 
-  fileProcessor.startSendingData(1490830040, 4000);
+  fileProcessor.startSendingData(1492880040, 200);
 
 }
 
