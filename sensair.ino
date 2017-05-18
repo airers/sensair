@@ -165,7 +165,11 @@ void setup() {
     tft.setTextSize(2);
     tft.println("NO SD");
     tft.setTextSize(1);
+    return;
   }
+
+  fileProcessor.startSendingData(1490830040, 4000);
+
 }
 
 void loop() {

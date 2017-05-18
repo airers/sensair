@@ -394,9 +394,9 @@ public:
       currentFile.close();
 z           free(buffer);
 
-      // long duration = millis() - startTime;
-      // // -Serial.print("Duration: ");
-      // // -Serial.println(duration);
+      long duration = millis() - startTime;
+      Serial.print("Duration: ");
+      Serial.println(duration);
 
     }
   }
