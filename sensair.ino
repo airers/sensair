@@ -167,9 +167,6 @@ void setup() {
     tft.setTextSize(1);
     return;
   }
-
-  fileProcessor.startSendingData(1492880040, 200);
-
 }
 
 void loop() {
