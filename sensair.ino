@@ -226,6 +226,7 @@ void setup() {
     tft.setTextSize(2);
     tft.println("NO SD");
     tft.setTextSize(1);
+    return;
   }
 }
 
