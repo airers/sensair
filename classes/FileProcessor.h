@@ -216,8 +216,6 @@ public:
     output[end - start] = '\0'; // Null terminate the string
   }
 
-
-
 /**
  * Counts the packets from a given timetamp to the latest timestamp
  * @method countPackets2

@@ -201,6 +201,8 @@ void setup() {
   // pinMode(20, INPUT_PULLUP); //Configures the pin of the SD card reader as an output
 
   Serial.println("Start");
+  
+  Serial.println(stateManager.rtc.isrunning());
 
   ROMVar::setCurrentTime(stateManager.getTimeStamp());
   ROMVar::setNextMinuteTime(calculateNextMinute());
@@ -222,11 +224,28 @@ void setup() {
 
   // Error messages
   if ( !fileProcessor.getCardAvailable() ) {
+    tft.fillScreen(ST7735_BLACK);
     tft.setTextColor(ST7735_WHITE);
-    tft.setCursor(30,30);
+    tft.setCursor(32,50);
     tft.setTextSize(2);
     tft.println("NO SD");
     tft.setTextSize(1);
+    tft.setCursor(16,50 + 23);
+    tft.println("SD not connected");
+    
+    return;
+  }
+  
+  if ( !stateManager.rtc.isrunning() ) {
+    tft.fillScreen(ST7735_BLACK);
+    tft.setTextColor(ST7735_WHITE);
+    tft.setCursor(10,50);
+    tft.setTextSize(2);
+    tft.println("RTC ERROR");
+    tft.setTextSize(1);
+    tft.setCursor(5,50 + 23);
+    tft.println("Clock not connected");
+    
     return;
   }
 }
