@@ -169,12 +169,6 @@ void setup() {
   tft.setTextColor(ST7735_RED);
   tft.print("No GPS");
   
-  tft.setTextColor(ST7735_GREEN);
-  tft.setCursor(5, 96);
-  tft.print("Sync in progress...");
-  tft.setCursor(5, 106);
-  tft.print(String(String(400) + " left"));
-  
   printTimeToScreen();
 
   /**
@@ -417,7 +411,8 @@ void loop() {
 
   }
 
-  fileProcessor.countSomePackets(btSerial);
+  fileProcessor.countSomePackets(btSerial, tft);
+  
   
   // Serial.println("Current Count: " + fileProcessor.sendCount);
   // Send packets if there's something requesting it

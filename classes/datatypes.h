@@ -41,13 +41,14 @@
 #define CMD_SET_TIME              5
 #define CMD_TIME_PACKET           6
 #define CMD_GET_READINGS          7
-#define CMD_READING_COUNT         8
-#define CMD_READY_TO_RECEIVE      9
-#define CMD_READING_PACKET        10
-#define CMD_READINGS_RECEIVED     11
-#define CMD_SET_MICROCLIMATE      12
-#define CMD_GET_MICROCLIMATE      13
-#define CMD_MICROCLIMATE_PACKET   14
+#define CMD_READING_COUNTING      8
+#define CMD_READING_COUNT         9
+#define CMD_READY_TO_RECEIVE      10
+#define CMD_READING_PACKET        11
+#define CMD_READINGS_RECEIVED     12
+#define CMD_SET_MICROCLIMATE      13
+#define CMD_GET_MICROCLIMATE      14
+#define CMD_MICROCLIMATE_PACKET   15
 
 typedef union {
     char bytes[4];

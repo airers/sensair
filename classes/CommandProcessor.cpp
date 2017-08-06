@@ -74,13 +74,7 @@ void CommandProcessor::processPacket(byte type,
           Serial.print(timestamp.data);
           // -Serial.println(" ");
           // readingCount.data = fileProcessor.countPackets2(timestamp.data);
-          btSerial.write(CMD_READING_COUNT);
-          packet_len = 2;
-          btSerial.write(packet_len);
-          btSerial.write(readingCount.bytes[0]);
-          btSerial.write(readingCount.bytes[1]);
-          btSerial.print("\r\n");
-
+          fileProcessor.countPackets2(timestamp.data);
           // Serial.println(readingCount.data);
         }
 

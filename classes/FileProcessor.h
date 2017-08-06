@@ -9,6 +9,9 @@
 // #include "RTClib.h"
 #include "EEPROMVariables.h"
 
+#include <Adafruit_GFX.h>    // Core graphics library
+#include <Adafruit_ST7735.h> // Hardware-specific library
+
 
 //Defining the pin for the SD Card reader
 #define SD_PIN 20
@@ -43,7 +46,7 @@ public:
   
   // If the iterator is 0, it means the program is not counting packets.
   long countReadingIterator = 0;
-  uint16_t sendCount = 0;
+  uint16_u sendCount;
   uint16_t packetsToSend = 0;
 
   static long getStartOfDay(long timestamp) {
@@ -102,6 +105,12 @@ public:
     }
   }
 
+  bool isSendingData() {
+    return readingIterator != 0;
+  }
+  bool isCounting() {
+    return countReadingIterator != 0;
+  }
   bool getCardAvailable() {
     return cardAvailable;
   }
@@ -231,7 +240,7 @@ public:
  */
   void countPackets2(long from) {
     countReadingIterator = from;
-    sendCount = 0;
+    sendCount.data = 0;
   }
 
 
@@ -291,7 +300,7 @@ public:
     }
   }
 
-  void countSomePackets(SoftwareSerial &btSerial) {
+  void countSomePackets(SoftwareSerial &btSerial, Adafruit_ST7735 &tft) {
     if ( countReadingIterator == 0 ) {
       return;
     } 
@@ -308,6 +317,15 @@ public:
       } else {
         countReadingIterator = 0;
         Serial.println("End of readings");
+        btSerial.write(CMD_READING_COUNT);
+        uint8_t packet_len = 2;
+        btSerial.write(packet_len);
+        btSerial.write(sendCount.bytes[0]);
+        btSerial.write(sendCount.bytes[1]);
+        btSerial.print("\r\n");
+        
+        tft.fillRect(5,96,120,20, ST7735_BLACK);
+        
         return;
       }
     }
@@ -332,13 +350,27 @@ public:
         long timestamp = atol(temp);
 
         if ( timestamp >= countReadingIterator) {
-          sendCount++;
+          sendCount.data++;
         }
       }
       currentFile.close();
       countReadingIterator = FileProcessor::getStartOfDay(countReadingIterator) + SECONDS_IN_DAY;
+    
+      tft.fillRect(5,106,120,10, ST7735_BLACK);
+      tft.setTextColor(ST7735_GREEN);
+      tft.setCursor(5, 96);
+      tft.print("Counting...");
+      tft.setCursor(5, 106);
+      tft.print(String(String(sendCount.data) + " readings"));
+      
+      btSerial.write(CMD_READING_COUNTING);
+      uint8_t packet_len = 2;
+      btSerial.write(packet_len);
+      btSerial.write(sendCount.bytes[0]);
+      btSerial.write(sendCount.bytes[1]);
+      btSerial.print("\r\n");
     }
-    Serial.println(sendCount);
+    Serial.println(sendCount.data);
   }
 
   void sendSomePackets(SoftwareSerial &btSerial) {
