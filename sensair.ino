@@ -86,6 +86,32 @@ long calculateNextMinute() {
   return currentDateTime.unixtime() + (60 - currentDateTime.second());
 }
 
+String pad0(int n) {
+  String ret = String(n);
+  if ( n < 10 ) {
+    ret = String('0'+ret);
+  }
+  return ret;
+}
+
+
+void printTimeToScreen() {
+  // Hardcode GMT+8
+  DateTime now = DateTime( 8 * SECONDS_IN_HOUR + stateManager.getTimeStamp() );
+  
+  tft.setTextColor(ST7735_WHITE);
+  tft.fillRect(5,119, 120,119 + 8,ST7735_BLACK);
+  tft.setCursor(5, 119); tft.print(pad0(now.hour()));
+  tft.setCursor(18, 119); tft.print(':');
+  tft.setCursor(25, 119); tft.print(pad0(now.minute()));
+  
+  tft.setCursor(55, 119); tft.print(pad0(now.day()));
+  tft.setCursor(69, 119); tft.print('/');
+  tft.setCursor(77, 119); tft.print(pad0(now.month()));
+  tft.setCursor(91, 119); tft.print('/');
+  tft.setCursor(99, 119); tft.print(now.year());
+}
+
 void setup() {
   pinMode(POWER_LED, OUTPUT);
   digitalWrite(POWER_LED, LOW);
@@ -115,6 +141,42 @@ void setup() {
   tft.initR(INITR_BLACKTAB);   // initialize a ST7735S chip, black tab
   tft.fillScreen(ST7735_BLACK);
 
+  tft.setTextColor(ST7735_WHITE);
+  tft.setCursor(20,10);
+  tft.setTextSize(2);
+  tft.println("SENSAIR");
+  
+  tft.setTextSize(1);
+
+  tft.fillRect(80,40,40,10,ST7735_BLACK);
+
+  tft.setCursor(0, 40);
+  tft.drawLine(0, 30, tft.width()-1, 30, ST7735_WHITE); //draw line separator
+  tft.setTextColor(ST7735_YELLOW);
+  tft.print(" PM2.5 Conc :");
+  
+  tft.setCursor(0, 50);
+  tft.setTextColor(ST7735_YELLOW);
+  tft.print(" Humidity(%) :");
+
+  tft.setCursor(0, 60);
+  tft.setTextColor(ST7735_YELLOW);
+  tft.print(" Temp :");
+  tft.drawLine(0, 75, tft.width()-1, 75, ST7735_WHITE); //draw line separator
+  
+  
+  tft.setCursor(5, 82);
+  tft.setTextColor(ST7735_RED);
+  tft.print("No GPS");
+  
+  tft.setTextColor(ST7735_GREEN);
+  tft.setCursor(5, 96);
+  tft.print("Sync in progress...");
+  tft.setCursor(5, 106);
+  tft.print(String(String(400) + " left"));
+  
+  printTimeToScreen();
+
   /**
    * Tests show that it takes about 1.9ms to read a single line from a file
    * 2.4ms to do conversion of data
@@ -139,6 +201,8 @@ void setup() {
   // pinMode(20, INPUT_PULLUP); //Configures the pin of the SD card reader as an output
 
   Serial.println("Start");
+  
+  Serial.println(stateManager.rtc.isrunning());
 
   ROMVar::setCurrentTime(stateManager.getTimeStamp());
   ROMVar::setNextMinuteTime(calculateNextMinute());
@@ -160,11 +224,28 @@ void setup() {
 
   // Error messages
   if ( !fileProcessor.getCardAvailable() ) {
+    tft.fillScreen(ST7735_BLACK);
     tft.setTextColor(ST7735_WHITE);
-    tft.setCursor(30,30);
+    tft.setCursor(32,50);
     tft.setTextSize(2);
     tft.println("NO SD");
     tft.setTextSize(1);
+    tft.setCursor(16,50 + 23);
+    tft.println("SD not connected");
+    
+    return;
+  }
+  
+  if ( !stateManager.rtc.isrunning() ) {
+    tft.fillScreen(ST7735_BLACK);
+    tft.setTextColor(ST7735_WHITE);
+    tft.setCursor(10,50);
+    tft.setTextSize(2);
+    tft.println("RTC ERROR");
+    tft.setTextSize(1);
+    tft.setCursor(5,50 + 23);
+    tft.println("Clock not connected");
+    
     return;
   }
 }
@@ -294,41 +375,22 @@ void loop() {
 
       {
         //Printing data onto TFT
-         tft.setTextColor(ST7735_WHITE);
-         tft.setCursor(20,10);
-         tft.setTextSize(2);
-         tft.println("SENSAIR");
          tft.setTextSize(1);
 
-         tft.fillRect(80,40,40,10,ST7735_BLACK);
-
-         tft.setCursor(0, 40);
-         tft.drawLine(0, 30, tft.width()-1, 30, ST7735_WHITE); //draw line separator
-         tft.setTextColor(ST7735_YELLOW);
-         tft.print(" PM2.5 Conc :");
-         tft.setCursor(80, 40);
+         tft.fillRect(90,40,40,10,ST7735_BLACK);
+         tft.setCursor(90, 40);
          tft.setTextColor(ST7735_GREEN);
          tft.println((float)dustDensity);
 
-         tft.fillRect(80,50,40,10,ST7735_BLACK);
-
-         tft.setCursor(0, 50);
-         tft.setTextColor(ST7735_YELLOW);
-         tft.print(" Humidity(%) :");
-         tft.setCursor(80, 50);
+         tft.fillRect(90,50,40,10,ST7735_BLACK);
+         tft.setCursor(90, 50);
          tft.setTextColor(ST7735_GREEN);
          tft.println((float)hum);
 
-         tft.fillRect(80,60,40,10,ST7735_BLACK);
-
-         tft.setCursor(0, 60);
-         tft.setTextColor(ST7735_YELLOW);
-         tft.print(" Temp :");
-         tft.setCursor(80, 60);
+         tft.fillRect(90,60,40,10,ST7735_BLACK);
+         tft.setCursor(90, 60);
          tft.setTextColor(ST7735_GREEN);
          tft.println((float)temp);
-
-         tft.drawLine(0, 75, tft.width()-1, 75, ST7735_WHITE); //draw line separator
       }
 
       // TODO: Not hardcode the microclimate and location
@@ -346,7 +408,7 @@ void loop() {
       fileProcessor.storeAverageData(prevMinuteTime, stateManager.microclimate);
       nextMinuteTime = calculateNextMinute();
       ROMVar::setNextMinuteTime(nextMinuteTime);
-
+      printTimeToScreen();
     }
 
   }
