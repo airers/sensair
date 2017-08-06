@@ -248,6 +248,10 @@ void setup() {
     
     return;
   }
+  
+  
+  fileProcessor.countPackets2(fileProcessor.getFirstReading());
+  
 }
 
 void loop() {
@@ -413,6 +417,9 @@ void loop() {
 
   }
 
+  fileProcessor.countSomePackets(btSerial);
+  
+  // Serial.println("Current Count: " + fileProcessor.sendCount);
   // Send packets if there's something requesting it
   fileProcessor.sendSomePackets(btSerial);
 
