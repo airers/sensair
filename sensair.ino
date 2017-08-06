@@ -94,21 +94,22 @@ String pad0(int n) {
   return ret;
 }
 
+
 void printTimeToScreen() {
   // Hardcode GMT+8
   DateTime now = DateTime( 8 * SECONDS_IN_HOUR + stateManager.getTimeStamp() );
   
   tft.setTextColor(ST7735_WHITE);
-  tft.fillRect(5,145, 120,155,ST7735_BLACK);
-  tft.setCursor(5, 145); tft.print(pad0(now.hour()));
-  tft.setCursor(18, 145); tft.print(':');
-  tft.setCursor(25, 145); tft.print(pad0(now.minute()));
+  tft.fillRect(5,119, 120,119 + 8,ST7735_BLACK);
+  tft.setCursor(5, 119); tft.print(pad0(now.hour()));
+  tft.setCursor(18, 119); tft.print(':');
+  tft.setCursor(25, 119); tft.print(pad0(now.minute()));
   
-  tft.setCursor(55, 145); tft.print(pad0(now.day()));
-  tft.setCursor(69, 145); tft.print('/');
-  tft.setCursor(77, 145); tft.print(pad0(now.month()));
-  tft.setCursor(91, 145); tft.print('/');
-  tft.setCursor(99, 145); tft.print(now.year());
+  tft.setCursor(55, 119); tft.print(pad0(now.day()));
+  tft.setCursor(69, 119); tft.print('/');
+  tft.setCursor(77, 119); tft.print(pad0(now.month()));
+  tft.setCursor(91, 119); tft.print('/');
+  tft.setCursor(99, 119); tft.print(now.year());
 }
 
 void setup() {
@@ -164,14 +165,14 @@ void setup() {
   tft.drawLine(0, 75, tft.width()-1, 75, ST7735_WHITE); //draw line separator
   
   
-  tft.setCursor(5, 85);
+  tft.setCursor(5, 82);
   tft.setTextColor(ST7735_RED);
   tft.print("No GPS");
   
   tft.setTextColor(ST7735_GREEN);
-  tft.setCursor(5, 95);
+  tft.setCursor(5, 96);
   tft.print("Sync in progress...");
-  tft.setCursor(5, 105);
+  tft.setCursor(5, 106);
   tft.print(String(String(400) + " left"));
   
   printTimeToScreen();
