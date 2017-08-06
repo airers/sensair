@@ -9,8 +9,8 @@
 // #include "RTClib.h"
 #include "EEPROMVariables.h"
 
-#include <Adafruit_GFX.h>    // Core graphics library
-#include <Adafruit_ST7735.h> // Hardware-specific library
+#include "Globals.h"
+
 
 
 //Defining the pin for the SD Card reader
@@ -241,6 +241,7 @@ public:
   void countPackets2(long from) {
     countReadingIterator = from;
     sendCount.data = 0;
+    Globals::stateManager->startCount();
   }
 
 
@@ -300,7 +301,7 @@ public:
     }
   }
 
-  void countSomePackets(SoftwareSerial &btSerial, Adafruit_ST7735 &tft) {
+  void countSomePackets(SoftwareSerial &btSerial) {
     if ( countReadingIterator == 0 ) {
       return;
     } 
@@ -324,8 +325,8 @@ public:
         btSerial.write(sendCount.bytes[1]);
         btSerial.print("\r\n");
         
-        tft.fillRect(5,96,120,20, ST7735_BLACK);
-        
+        // tft.fillRect(5,96,120,20, ST7735_BLACK);
+        Globals::stateManager->end();
         return;
       }
     }
@@ -356,12 +357,14 @@ public:
       currentFile.close();
       countReadingIterator = FileProcessor::getStartOfDay(countReadingIterator) + SECONDS_IN_DAY;
     
-      tft.fillRect(5,106,120,10, ST7735_BLACK);
-      tft.setTextColor(ST7735_GREEN);
-      tft.setCursor(5, 96);
-      tft.print("Counting...");
-      tft.setCursor(5, 106);
-      tft.print(String(String(sendCount.data) + " readings"));
+      // tft.fillRect(5,106,120,10, ST7735_BLACK);
+      // tft.setTextColor(ST7735_GREEN);
+      // tft.setCursor(5, 96);
+      // tft.print("Counting...");
+      // tft.setCursor(5, 106);
+      // tft.print(String(String(sendCount.data) + " readings"));
+      
+      Globals::stateManager->updateCount(sendCount.data);
       
       btSerial.write(CMD_READING_COUNTING);
       uint8_t packet_len = 2;

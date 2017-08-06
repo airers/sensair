@@ -1,4 +1,5 @@
 #include "CommandProcessor.h"
+#include "Globals.h"
 
 // long CommandProcessor::timestampForSending =0;
 void CommandProcessor::processPacket(byte type,

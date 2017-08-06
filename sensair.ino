@@ -18,6 +18,7 @@
 #include "classes/StateManager.h"
 #include "classes/FileProcessor.h"
 #include "classes/EEPROMVariables.h"
+#include "classes/Globals.h"
 
 // Temp used for testing
 // #include <SD.h>
@@ -113,6 +114,7 @@ void printTimeToScreen() {
 }
 
 void setup() {
+  Globals::stateManager = &stateManager;
   pinMode(POWER_LED, OUTPUT);
   digitalWrite(POWER_LED, LOW);
 
@@ -128,7 +130,7 @@ void setup() {
   Wire.begin();
   dht.begin();
 
-  stateManager.init();
+  stateManager.init(&tft);
   stateManager.printNow();
   fileProcessor.init();
 
@@ -242,10 +244,6 @@ void setup() {
     
     return;
   }
-  
-  
-  fileProcessor.countPackets2(fileProcessor.getFirstReading());
-  
 }
 
 void loop() {
@@ -411,7 +409,7 @@ void loop() {
 
   }
 
-  fileProcessor.countSomePackets(btSerial, tft);
+  fileProcessor.countSomePackets(btSerial);
   
   
   // Serial.println("Current Count: " + fileProcessor.sendCount);
