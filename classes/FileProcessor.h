@@ -243,6 +243,8 @@ public:
   void countPackets2(long from) {
     stopCountingAndSending();
     countReadingIterator = from;
+    Serial.print("Count Reading Iterator: ");
+    Serial.println(countReadingIterator);
     sendCount.data = 0;
     Globals::stateManager->startCount();
   }
@@ -326,7 +328,9 @@ public:
     Serial.println(filename);
     if ( !SD.exists(filename) ) {
       countReadingIterator = FileProcessor::getStartOfDay(countReadingIterator) + SECONDS_IN_DAY;
-      if ( countReadingIterator <= latestReading ) {
+      Serial.println(countReadingIterator);
+      Serial.println(Globals::stateManager->getTimeStamp());
+      if ( countReadingIterator <= latestReading && countReadingIterator <= Globals::stateManager->getTimeStamp() ) {
         return;
       } else {
         countReadingIterator = 0;
@@ -365,6 +369,7 @@ public:
 
         if ( timestamp >= countReadingIterator) {
           sendCount.data++;
+          countReadingIterator = timestamp + 1;
         }
       }
       currentFile.close();
@@ -401,6 +406,7 @@ public:
       fileIterator = 0;
       if ( readingIterator <= latestReading ) {
       } else {
+        Globals::stateManager->end();
         readingIterator = 0;
       }
       return;
@@ -437,9 +443,10 @@ public:
           }
         };
       }
+      Globals::stateManager->updateSend(packetsToSend);
       Serial.println(packetsToSend);
       if ( packetsToSend == 0 ) { // Done sending files
-        Serial.println("Done");
+        Globals::stateManager->end();
         readingIterator = 0; // Reset the iterator to indicate nothing is sending
       } else if ( lines < READINGS_PER_PACKET ) { // Reached end of file
         Serial.println("EOF");

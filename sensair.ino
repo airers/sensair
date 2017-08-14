@@ -82,11 +82,6 @@ FileProcessor fileProcessor;
 // unsigned int deltaTime = 40; //Datasheet: Duration of the whole excitation pulse: 320 µs; Duration before switching off LED: 40 µs
 // unsigned int sleepTime = 9680; //Datasheet: Pulse Cycle: 10ms; Remaining time: 10,000 - 320 = 9680 µs
 
-long calculateNextMinute() {
-  DateTime currentDateTime(ROMVar::getCurrentTime());
-  return currentDateTime.unixtime() + (60 - currentDateTime.second());
-}
-
 String pad0(int n) {
   String ret = String(n);
   if ( n < 10 ) {
@@ -199,9 +194,7 @@ void setup() {
   Serial.println("Start");
   
   Serial.println(stateManager.rtc.isrunning());
-
-  ROMVar::setCurrentTime(stateManager.getTimeStamp());
-  ROMVar::setNextMinuteTime(calculateNextMinute());
+  
   // Triple blink to indicate ready
   digitalWrite(WORKING_LED, LOW);
   delay(75);
@@ -244,6 +237,11 @@ void setup() {
     
     return;
   }
+  
+  // fileProcessor.countPackets2(1501977600);
+  // fileProcessor.startSendingData(1501977600,218);
+  pinMode(A7, OUTPUT);
+  analogWrite(A7, 800);
 }
 
 void loop() {
@@ -256,11 +254,37 @@ void loop() {
     return;
   }
 
+  if ( !stateManager.rtc.isrunning() ) {
+    tft.fillScreen(ST7735_BLACK);
+    tft.setTextColor(ST7735_WHITE);
+    tft.setCursor(10,50);
+    tft.setTextSize(2);
+    tft.println("RTC ERROR");
+    tft.setTextSize(1);
+    tft.setCursor(5,50 + 23);
+    tft.println("Clock not connected");
+    
+    return;
+  }
+  
+  // Error messages
+  if ( !fileProcessor.getCardAvailable() ) {
+    tft.fillScreen(ST7735_BLACK);
+    tft.setTextColor(ST7735_WHITE);
+    tft.setCursor(32,50);
+    tft.setTextSize(2);
+    tft.println("NO SD");
+    tft.setTextSize(1);
+    tft.setCursor(16,50 + 23);
+    tft.println("SD not connected");
+    
+    return;
+  }
+  
   digitalWrite(WORKING_LED, LOW);
 
   // Process the incoming bluetooth packets
   {
-
       byte type = 0;
       uint8_t len = 0;
       bool read = false;
@@ -402,18 +426,14 @@ void loop() {
       // Average past minute readings & save as previous minute
       fileProcessor.openAppropiateFile(prevMinuteTime);
       fileProcessor.storeAverageData(prevMinuteTime, stateManager.microclimate);
-      nextMinuteTime = calculateNextMinute();
-      ROMVar::setNextMinuteTime(nextMinuteTime);
+      stateManager.setNextMinute();
       printTimeToScreen();
     }
 
   }
 
+  // Threads
   fileProcessor.countSomePackets(btSerial);
-  
-  
-  // Serial.println("Current Count: " + fileProcessor.sendCount);
-  // Send packets if there's something requesting it
   fileProcessor.sendSomePackets(btSerial);
 
   /**
@@ -426,41 +446,4 @@ void loop() {
    * 1490793754
    * 88 219 181 26
    */
-
-
-  // tmElements_t tm;
-  //
-  // time_t unixtime = RTC.get();
-  // Serial.println(unixtime);
-  // if (RTC.read(tm)) {
-  //   Serial.print("Ok, Time = ");
-  //   print2digits(tm.Hour);
-  //   Serial.write(':');
-  //   print2digits(tm.Minute);
-  //   Serial.write(':');
-  //   print2digits(tm.Second);
-  //   Serial.print(", Date (D/M/Y) = ");
-  //   Serial.print(tm.Day);
-  //   Serial.write('/');
-  //   Serial.print(tm.Month);
-  //   Serial.write('/');
-  //   Serial.print(tmYearToCalendar(tm.Year));
-  //   Serial.println();
-  // } else {
-  //   if (RTC.chipPresent()) {
-  //     Serial.println("The DS1307 is stopped.  Please run the SetTime");
-  //     Serial.println("example to initialize the time and begin running.");
-  //     Serial.println();
-  //   } else {
-  //     Serial.println("DS1307 read error!  Please check the circuitry.");
-  //     Serial.println();
-  //   }
-  //   delay(9000);
-  // }
-  if ( fileProcessor.packetsToSend > 0 ) {
-    Serial.print("Sending: ");
-    Serial.println(fileProcessor.packetsToSend);
-    digitalWrite(WORKING_LED, HIGH);
-  }
-  delay(50);
 }

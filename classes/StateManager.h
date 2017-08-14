@@ -9,6 +9,7 @@
 
 #include <Adafruit_GFX.h>    // Core graphics library
 #include <Adafruit_ST7735.h> // Hardware-specific library
+#include "EEPROMVariables.h"
 
 // Defining constants
 
@@ -33,8 +34,19 @@ public:
     microclimate = MICROCLIMATE_INDOORS;
     tft = _tft;
     rtc.begin();
+    ROMVar::setCurrentTime(getTimeStamp());
+    ROMVar::setNextMinuteTime(calculateNextMinute());
   }
 
+  long calculateNextMinute() {
+    DateTime currentDateTime = getDateTime();
+    return currentDateTime.unixtime() + (60 - currentDateTime.second());
+  }
+  
+  void setNextMinute() {
+    ROMVar::setNextMinuteTime(calculateNextMinute());
+  }
+  
   // Microclimate Getter/Setter
   uint8_t getMicroclimate() {
     return microclimate;
@@ -63,13 +75,16 @@ public:
     print2digits(now.second());
     Serial.println();
   }
+  
   long getTimeStamp() {
     return rtc.now().unixtime();
   }
+  
   void setTime(long time) {
     rtc.adjust(DateTime(time));
+    ROMVar::setCurrentTime(time);
+    setNextMinute();
   }
-  
   
   void startCount() {
     tft->fillRect(5,96,120,20, ST7735_BLACK);
