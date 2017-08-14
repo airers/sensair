@@ -1,4 +1,5 @@
 #include "CommandProcessor.h"
+#include "Globals.h"
 
 // long CommandProcessor::timestampForSending =0;
 void CommandProcessor::processPacket(byte type,
@@ -51,7 +52,7 @@ void CommandProcessor::processPacket(byte type,
         // -Serial.println("Getting readings");
         // -Serial.println(len);
 
-        // ROMVar::printFreeRam();
+        // ROMVar::printFreeRam()
         if ( len >= 4 ) {
           long_u timestamp;
           timestamp.bytes[0] = bytes[0];
@@ -73,14 +74,8 @@ void CommandProcessor::processPacket(byte type,
           Serial.write(C_LR);
           Serial.print(timestamp.data);
           // -Serial.println(" ");
-          readingCount.data = fileProcessor.countPackets2(timestamp.data);
-          btSerial.write(CMD_READING_COUNT);
-          packet_len = 2;
-          btSerial.write(packet_len);
-          btSerial.write(readingCount.bytes[0]);
-          btSerial.write(readingCount.bytes[1]);
-          btSerial.print("\r\n");
-
+          // readingCount.data = fileProcessor.countPackets2(timestamp.data);
+          fileProcessor.countPackets2(timestamp.data);
           // Serial.println(readingCount.data);
         }
 
@@ -102,7 +97,6 @@ void CommandProcessor::processPacket(byte type,
         uint16_u count;
         count.bytes[0] = bytes[4];
         count.bytes[1] = bytes[5];
-
         // Set state to packet sending mode
         // Send packets (not here, in main loop)
         fileProcessor.startSendingData(timestamp.data, count.data);

@@ -9,6 +9,9 @@
 // #include "RTClib.h"
 #include "EEPROMVariables.h"
 
+#include "Globals.h"
+
+
 
 //Defining the pin for the SD Card reader
 #define SD_PIN 20
@@ -30,6 +33,9 @@ private:
   // Used for writing files
   File currentDayFile;
   long firstReading; // Timestamp for the first reading
+  
+  char * buffer = "                                                                                          ";
+  char * temp = "               ";
 public:
   // Used for reading files
   // If the iterator is 0, it means the program is not sending files.
@@ -37,6 +43,10 @@ public:
   // The position in a file to start from so don't have to process
   // the packets that are not used
   long fileIterator = 0;
+  
+  // If the iterator is 0, it means the program is not counting packets.
+  long countReadingIterator = 0;
+  uint16_u sendCount;
   uint16_t packetsToSend = 0;
 
   static long getStartOfDay(long timestamp) {
@@ -95,6 +105,14 @@ public:
     }
   }
 
+  bool isSendingData() {
+    return readingIterator != 0;
+  }
+  
+  bool isCounting() {
+    return countReadingIterator != 0;
+  }
+  
   bool getCardAvailable() {
     return cardAvailable;
   }
@@ -222,68 +240,35 @@ public:
  * @param  from          start timestamp
  * @return               [description]
  */
-  uint16_t countPackets2(long from) {
-    uint16_t count = 0;
-    long latestReading = ROMVar::getLatestReading();
-    long countReadingIterator = from;
-    char * buffer = (char*)malloc(90);
-    char * temp = (char*)malloc(15);
-
-    while ( true ) {
-      char * filename = FileProcessor::timestampToFilename(countReadingIterator);
-      Serial.write(C_C);
-      Serial.write(C_SP);
-      Serial.println(filename);
-      if ( !SD.exists(filename) ) {
-        countReadingIterator = FileProcessor::getStartOfDay(countReadingIterator) + SECONDS_IN_DAY;
-        if ( countReadingIterator <= latestReading ) {
-          continue;
-        } else {
-          break;
-        }
-      }
-
-      File currentFile = SD.open(filename, FILE_READ);
-      if ( currentFile ) {
-        while ( currentFile.available() ) {
-          char r = '\0';
-          int i = 0;
-          while ( r != '\n' ) {
-            if ( !currentFile.available() ) break;
-            r = currentFile.read();
-            buffer[i] = r;
-            i++;
-          }
-          buffer[i] = '\0';
-          // Process a line
-          getSplitSection(temp, buffer, 1);
-          long timestamp = atol(temp);
-
-          if ( timestamp >= countReadingIterator) {
-            count++;
-          }
-        }
-        currentFile.close();
-        countReadingIterator = FileProcessor::getStartOfDay(countReadingIterator) + SECONDS_IN_DAY;
-      }
-    }
-
-    free(temp);
-    free(buffer);
-    return count;
+  void countPackets2(long from) {
+    stopCountingAndSending();
+    countReadingIterator = from;
+    Serial.print("Count Reading Iterator: ");
+    Serial.println(countReadingIterator);
+    sendCount.data = 0;
+    Globals::stateManager->startCount();
   }
 
-
+  void stopCountingAndSending() {
+    if ( countReadingIterator != 0 && readingIterator != 0 ) {
+      countReadingIterator = 0;
+      readingIterator = 0;
+      packetsToSend = 0;
+      Globals::stateManager->end();
+    }
+  }
+  
   void startSendingData(long from, uint16_t count) {
+    stopCountingAndSending();
     fileIterator = 0;
     readingIterator = from;
     packetsToSend = count;
+    Globals::stateManager->startSend();  
   }
 
   bool processLine(char * buffer, SoftwareSerial &btSerial) {
     // Line example:
     // 12:41:42,1490058484,1023.01,2,1.2952337,103.7858645,14.525,5.4246
-    char * temp = (char*)malloc(15);
     getSplitSection(temp, buffer, 1);
     long timestamp = atol(temp);
 
@@ -325,14 +310,89 @@ public:
       }
       btSerial.print("\r\n");
       free(packet);
-      free(temp);
       return true;
     } else {
-      free(temp);
       return false;
     }
   }
 
+  void countSomePackets(SoftwareSerial &btSerial) {
+    if ( countReadingIterator == 0 ) {
+      return;
+    } 
+    long latestReading = ROMVar::getLatestReading();
+    
+    char * filename = FileProcessor::timestampToFilename(countReadingIterator);
+    Serial.write(C_C);
+    Serial.write(C_SP);
+    Serial.println(filename);
+    if ( !SD.exists(filename) ) {
+      countReadingIterator = FileProcessor::getStartOfDay(countReadingIterator) + SECONDS_IN_DAY;
+      Serial.println(countReadingIterator);
+      Serial.println(Globals::stateManager->getTimeStamp());
+      if ( countReadingIterator <= latestReading && countReadingIterator <= Globals::stateManager->getTimeStamp() ) {
+        return;
+      } else {
+        countReadingIterator = 0;
+        Serial.println("End of readings");
+        btSerial.write(CMD_READING_COUNT);
+        uint8_t packet_len = 2;
+        btSerial.write(packet_len);
+        btSerial.write(sendCount.bytes[0]);
+        btSerial.write(sendCount.bytes[1]);
+        btSerial.print("\r\n");
+        
+        // tft.fillRect(5,96,120,20, ST7735_BLACK);
+        Globals::stateManager->end();
+        return;
+      }
+    }
+    
+    Serial.print("Counting... ");
+    
+
+    File currentFile = SD.open(filename, FILE_READ);
+    if ( currentFile ) {
+      while ( currentFile.available() ) {
+        char r = '\0';
+        int i = 0;
+        while ( r != '\n' ) {
+          if ( !currentFile.available() ) break;
+          r = currentFile.read();
+          buffer[i] = r;
+          i++;
+        }
+        buffer[i] = '\0';
+        // Process a line
+        getSplitSection(temp, buffer, 1);
+        long timestamp = atol(temp);
+
+        if ( timestamp >= countReadingIterator) {
+          sendCount.data++;
+          countReadingIterator = timestamp + 1;
+        }
+      }
+      currentFile.close();
+      countReadingIterator = FileProcessor::getStartOfDay(countReadingIterator) + SECONDS_IN_DAY;
+    
+      // tft.fillRect(5,106,120,10, ST7735_BLACK);
+      // tft.setTextColor(ST7735_GREEN);
+      // tft.setCursor(5, 96);
+      // tft.print("Counting...");
+      // tft.setCursor(5, 106);
+      // tft.print(String(String(sendCount.data) + " readings"));
+      
+      Globals::stateManager->updateCount(sendCount.data);
+      
+      btSerial.write(CMD_READING_COUNTING);
+      uint8_t packet_len = 2;
+      btSerial.write(packet_len);
+      btSerial.write(sendCount.bytes[0]);
+      btSerial.write(sendCount.bytes[1]);
+      btSerial.print("\r\n");
+    }
+    Serial.println(sendCount.data);
+  }
 
   void sendSomePackets(SoftwareSerial &btSerial) {
     if ( readingIterator == 0 || packetsToSend == 0 ) {
@@ -346,6 +406,7 @@ public:
       fileIterator = 0;
       if ( readingIterator <= latestReading ) {
       } else {
+        Globals::stateManager->end();
         readingIterator = 0;
       }
       return;
@@ -382,9 +443,10 @@ public:
           }
         };
       }
+      Globals::stateManager->updateSend(packetsToSend);
       Serial.println(packetsToSend);
       if ( packetsToSend == 0 ) { // Done sending files
-        Serial.println("Done");
+        Globals::stateManager->end();
         readingIterator = 0; // Reset the iterator to indicate nothing is sending
       } else if ( lines < READINGS_PER_PACKET ) { // Reached end of file
         Serial.println("EOF");
