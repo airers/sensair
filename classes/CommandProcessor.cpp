@@ -52,7 +52,7 @@ void CommandProcessor::processPacket(byte type,
         // -Serial.println("Getting readings");
         // -Serial.println(len);
 
-        // ROMVar::printFreeRam();
+        // ROMVar::printFreeRam()
         if ( len >= 4 ) {
           long_u timestamp;
           timestamp.bytes[0] = bytes[0];
@@ -97,7 +97,6 @@ void CommandProcessor::processPacket(byte type,
         uint16_u count;
         count.bytes[0] = bytes[4];
         count.bytes[1] = bytes[5];
-
         // Set state to packet sending mode
         // Send packets (not here, in main loop)
         fileProcessor.startSendingData(timestamp.data, count.data);

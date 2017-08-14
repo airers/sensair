@@ -108,14 +108,11 @@ public:
   bool isSendingData() {
     return readingIterator != 0;
   }
+  
   bool isCounting() {
     return countReadingIterator != 0;
   }
-    
-  bool isIdle() {
-    return !isSendingData() && !isCounting();
-  }
-
+  
   bool getCardAvailable() {
     return cardAvailable;
   }
@@ -244,16 +241,27 @@ public:
  * @return               [description]
  */
   void countPackets2(long from) {
+    stopCountingAndSending();
     countReadingIterator = from;
     sendCount.data = 0;
     Globals::stateManager->startCount();
   }
 
-
+  void stopCountingAndSending() {
+    if ( countReadingIterator != 0 && readingIterator != 0 ) {
+      countReadingIterator = 0;
+      readingIterator = 0;
+      packetsToSend = 0;
+      Globals::stateManager->end();
+    }
+  }
+  
   void startSendingData(long from, uint16_t count) {
+    stopCountingAndSending();
     fileIterator = 0;
     readingIterator = from;
     packetsToSend = count;
+    Globals::stateManager->startSend();  
   }
 
   bool processLine(char * buffer, SoftwareSerial &btSerial) {
