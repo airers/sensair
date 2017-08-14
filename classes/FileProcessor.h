@@ -111,6 +111,11 @@ public:
   bool isCounting() {
     return countReadingIterator != 0;
   }
+    
+  bool isIdle() {
+    return !isSendingData() && !isCounting();
+  }
+
   bool getCardAvailable() {
     return cardAvailable;
   }
